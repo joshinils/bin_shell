@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+
+import re
+import subprocess
+
+ls = subprocess.run(["ls","-1A"],text=True,stdout=subprocess.PIPE).stdout.splitlines()
+
+this_index = -1
+prev_number = None
+prev_f = None
+prev_was_match = False
+omitted_count = 0
+
+for f in ls:
+    this_index += 1
+    matches = re.findall("[0-9]+", f)
+    concat_matches = ''.join(matches)
+
+    if len(concat_matches) > 0:
+        number_match = int(concat_matches)
+    else:
+        number_match = -1
+
+    # magic
+    if (    len(concat_matches) > 0 # there are numbers
+        and prev_number == number_match -1 # continuous
+        and this_index+1 != len(ls)): # not last
+        # don't print f
+        prev_was_match = True
+        omitted_count += 1
+        #print(f)
+    else:
+        if prev_was_match:
+            if omitted_count > 1:
+                print("...")
+                pass
+            if this_index+1 != len(ls): # not last
+                print(prev_f)
+        prev_was_match = False
+        print(f)
+        omitted_count = 0
+
+
+    # prepare for next iteration
+    prev_number = number_match
+    prev_f = f

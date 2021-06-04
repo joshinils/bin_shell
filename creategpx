@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+startingFolderName=${PWD##*/}
+startingFolder=$PWD
+
+mkdir gpx -p
+
+# echo "$startingFolder"
+# echo "$startingFolderName"
+
+for dir in $(find * -type f -name '*.JPG' -printf '%h\n'|sort -Vu); do # Not recommended, will break on whitespace
+(
+    cd "$dir"
+    # echo "$dir"
+    # echo $PWD
+    gpx_name="${dir//\//_}"
+    #echo $gpx_name
+
+    gpx_fileName=$startingFolder/gpx/$gpx_name.gpx
+
+    if [ ! -s "$gpx_fileName" ]; then
+        echo "processsing" $gpx_fileName
+        exiftool -fileOrder gpsdatetime -q -q -p ~/gpx/print_format_file_for_gpx_from_images $PWD > $gpx_name.gpx && mv $gpx_name.gpx $startingFolder/gpx/$gpx_name.gpx
+        echo "      done:" $gpx_fileName
+    else
+        echo "skipping   " $gpx_fileName
+    fi
+
+)
+done

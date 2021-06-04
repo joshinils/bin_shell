@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+(
+    rsync -Pavh --info=progress2 --info=name0 --stats --progress ./* ~/Pictures/streetview/neue_bilder_unsortiert/$(date '+%Y-%m-%dT%H%M%S')_gopro8/
+)

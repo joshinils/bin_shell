@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+for f in *.HEIC
+do
+    echo "Working on file $f"
+    $1 *$f $f.jpg
+done
