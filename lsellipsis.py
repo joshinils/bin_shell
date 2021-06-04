@@ -25,27 +25,29 @@ def add_ellipses(ls: List[str]) -> List[str]:
 
         if (        len(concat_matches) > 0 # there are numbers
                 and prev_number == number_match -1 # continuous
-                and this_index+1 != len(ls) # not last
             ):
             # don't print f
-            prev_was_match = True
-            omitted_count += 1
-            #ls_return.append(f)
+            prev_was_match = True  # for next iteration
+            omitted_count += 1 # for next iteration
+
+            if this_index+1 == len(ls): # is last
+                ls_return.append("...")
+                ls_return.append(f)
+                return ls_return
+            prev_f = f # for next iteration
         else:
             if prev_was_match:
+                prev_was_match = False # for next iteration
+
                 if omitted_count > 1:
                     ls_return.append("...")
-                    pass
-                if this_index+1 != len(ls): # not last
-                    ls_return.append(prev_f)
-            prev_was_match = False
+                ls_return.append(prev_f)
+
             ls_return.append(f)
-            omitted_count = 0
+            omitted_count = 0 # reset
 
+        prev_number = number_match # for next iteration
 
-        # prepare for next iteration
-        prev_number = number_match
-        prev_f = f
     return ls_return
 
 if __name__ == '__main__':
