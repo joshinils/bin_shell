@@ -5,7 +5,7 @@ import subprocess
 from typing import List
 
 
-def add_ellipsis(ls: List[str]) -> List[str]:
+def add_ellipses(ls: List[str]) -> List[str]:
     this_index = -1
     prev_number = None
     prev_f = None
@@ -48,6 +48,7 @@ def add_ellipsis(ls: List[str]) -> List[str]:
         prev_f = f
     return ls_return
 
-ls = add_ellipsis( subprocess.run(["ls","-1A"],text=True,stdout=subprocess.PIPE).stdout.splitlines() )
-for i in ls:
-    print(i)
+if __name__ == '__main__':
+    ls = add_ellipses( subprocess.run(["ls","-1A"],text=True,stdout=subprocess.PIPE).stdout.splitlines() )
+    for i in ls:
+        print(i)
