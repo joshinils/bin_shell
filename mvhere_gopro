@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+mv */* . -n
+
+mkdir A0 A1 A2 A3 A4 A5 A6 A7 A8 A9
+
+mv G000*.JPG A0
+mv G001*.JPG A1
+mv G002*.JPG A2
+mv G003*.JPG A3
+mv G004*.JPG A4
+mv G005*.JPG A5
+mv G006*.JPG A6
+mv G007*.JPG A7
+mv G008*.JPG A8
+mv G009*.JPG A9
+
+find . -type d -empty -delete
