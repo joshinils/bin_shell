@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
 (
-    rsync -Pavh --info=progress2 --info=name0 --stats --progress ./* ~/Pictures/streetview/neue_bilder_unsortiert/$(date '+%Y-%m-%dT%H%M%S')_gopro8/
+    datum=$(date '+%Y-%m-%dT%H%M%S')
+    rsync -Pavh --info=progress2 --info=name0 --stats --progress ./* ~/Pictures/streetview/neue_bilder_unsortiert/${datum}_gopro8/
+    cd ~/Pictures/streetview/neue_bilder_unsortiert/${datum}_gopro8
+    mvhere_gopro
 )

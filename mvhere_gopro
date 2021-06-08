@@ -1,18 +1,26 @@
 #!/usr/bin/env bash
 
-mv */* . -n
+# https://unix.stackexchange.com/a/87608/408771
+mv *GOPRO/* . -n 2>/dev/null # fail silently
 
-mkdir A0 A1 A2 A3 A4 A5 A6 A7 A8 A9
+find . -type d -empty -delete
 
-mv G000*.JPG A0
-mv G001*.JPG A1
-mv G002*.JPG A2
-mv G003*.JPG A3
-mv G004*.JPG A4
-mv G005*.JPG A5
-mv G006*.JPG A6
-mv G007*.JPG A7
-mv G008*.JPG A8
-mv G009*.JPG A9
+exiftool '-Directory<DateTimeOriginal' -d ./%Y-%m-%d_gopro8 *.JPG
+exiftool '-Directory<CreateDate' -d ./%Y-%m-%d_gopro8 *.JPG
 
+find . -type d -empty -delete
+
+for d in $(find * -maxdepth 0 -type d); do
+    (
+        cd $d
+        echo "$d"
+        mv */**/*.JPG . -n 2>/dev/null
+        for i in {000..999}; do
+            mkdir --parent D_$i
+            mv G$i*.JPG D_$i 2>/dev/null
+        done
+        find . -type d -empty -delete
+    )
+    find . -type d -empty -delete
+done
 find . -type d -empty -delete
