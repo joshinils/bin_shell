@@ -5,8 +5,10 @@ mv *GOPRO/* . -n 2>/dev/null # fail silently
 
 find . -type d -empty -delete
 
-exiftool '-Directory<DateTimeOriginal' -d ./%Y-%m-%d_gopro8 *.JPG
-exiftool '-Directory<CreateDate' -d ./%Y-%m-%d_gopro8 *.JPG
+picture_total=$(ls *.JPG -1q | wc -l)
+
+exiftool '-Directory<DateTimeOriginal' -d ./%Y-%m-%d_gopro8 *.JPG |& pv -lpteI -s $picture_total -i 0.1 1> /dev/null
+exiftool '-Directory<CreateDate' -q -q -d ./%Y-%m-%d_gopro8 *.JPG |& pv -lpteI -s $picture_total -i 0.1 1> /dev/null
 
 find . -type d -empty -delete
 
