@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 (
-    mkdir -p ~/gpx
-    cd ~/gpx
+    DIR="$HOME/gpx/garmin"
+    mkdir --parents $DIR
+    cd $DIR
     sudo gpsbabel -t -w -i garmin -f usb: -o gpx -F "garmin-latest_"$(date '+%Y-%m-%dT%H%M%S')".gpx"
 )

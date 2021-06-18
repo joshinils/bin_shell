@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 (
-    datum=$(date '+%Y-%m-%dT%H%M%S')
-    rsync -Pavh --info=progress2 --info=name0 --stats --progress ./* ~/Pictures/streetview/neue_bilder_unsortiert/${datum}_gopro8/
-    cd ~/Pictures/streetview/neue_bilder_unsortiert/${datum}_gopro8
-    mvhere_gopro
+    DIR="$HOME/Pictures/streetview/neue_bilder_unsortiert/$(date '+%Y-%m-%dT%H%M%S')_gopro8"
+    rsync -Pavh --info=progress2 --info=name0 --stats --progress ./* $DIR
+
+    cd $DIR
+    if [ $? -eq 0 ]; then
+        mvhere_gopro
+    fi
 )
