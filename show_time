@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+LANG=C
+LC_NUMERIC=C
+
+if [[ "$1" =~ (.*)m.* ]]; then
+    num=$(echo "${BASH_REMATCH[1]}"*60/1|bc)
+elif [[ "$1" =~ (.*)h.* ]]; then
+    num=$(echo "${BASH_REMATCH[1]}"*60*60/1|bc)
+elif [[ "$1" =~ (.*)d.* ]]; then
+    num="${BASH_REMATCH[1]}"*60*60*24
+    num=$(echo "${BASH_REMATCH[1]}"*60*60*24/1|bc)
+elif [[ "$1" =~ (.*)s.* ]]; then
+    num=$(echo "${BASH_REMATCH[1]}"/1|bc)
+else # given as sec
+    num=$1
+fi
+
+min=0
+hour=0
+day=0
+if (( $(echo "$num > 59" |bc -l) )); then
+    sec=$(echo "$num%60/1"|bc)
+    num=$(echo "$num/60/1"|bc)
+    # now num is an integer which bash can handle
+    if (( $(echo "$num > 59" |bc -l) ));then
+        ((min=num%60))
+        ((num=num/60))
+        if (( $(echo "$num > 23" |bc -l) ));then
+            ((hour=num%24))
+            ((day=num/24))
+        else
+            ((hour=num))
+        fi
+    else
+        min=$num
+    fi
+else
+    sec=$num
+fi
+if (( $(echo "$day  == 0" |bc -l) )); then printf '  :'; else printf '%02g:' $day ; fi
+if (( $(echo "$hour == 0" |bc -l) )); then printf '  :'; else printf '%02g:' $hour; fi
+if (( $(echo "$min  == 0" |bc -l) )); then printf '  :'; else printf '%02g:' $min ; fi
+printf '%02f\n' $sec
