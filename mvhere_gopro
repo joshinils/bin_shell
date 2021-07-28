@@ -7,20 +7,38 @@ find . -type d -empty -delete
 
 picture_total=$(ls *.JPG -1q | wc -l)
 
+# move images into folders by date taken
 exiftool '-Directory<DateTimeOriginal' -d ./%Y-%m-%d_gopro8 *.JPG |& pv -lpteI -s $picture_total -i 0.1 1> /dev/null
 exiftool '-Directory<CreateDate' -q -q -d ./%Y-%m-%d_gopro8 *.JPG |& pv -lpteI -s $picture_total -i 0.1 1> /dev/null
 
 find . -type d -empty -delete
 
-for d in $(find * -maxdepth 0 -type d); do
+# go into each days folder
+# move batches of files sequentially numbered into subfolders
+for dir in $(find * -maxdepth 0 -type d); do
     (
-        cd $d
-        echo "$d"
+        cd $dir
+        echo "$dir"
         mv */**/*.JPG . -n 2>/dev/null
         for i in {000..999}; do
             mkdir --parent D_$i
             mv G$i*.JPG D_$i 2>/dev/null
         done
+        find . -type d -empty -delete
+    )
+    find . -type d -empty -delete
+done
+find . -type d -empty -delete
+
+# go into each days folder
+# combine sequential batches of files sequentially numbered into combined folders
+echo $PWD
+for dir in $(find * -maxdepth 0 -type d); do
+    echo wtf $dir
+    (
+        cd $dir
+        echo "$dir"
+        combine_sequential_gopro
         find . -type d -empty -delete
     )
     find . -type d -empty -delete
