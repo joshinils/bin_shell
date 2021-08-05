@@ -32,12 +32,12 @@ find . -type d -empty -delete
 
 # go into each days folder
 # combine sequential batches of files sequentially numbered into combined folders
-echo $PWD
+#echo $PWD
 for dir in $(find * -maxdepth 0 -type d); do
-    echo wtf $dir
+    #echo wtf $dir
     (
         cd $dir
-        echo "$dir"
+        #echo "$dir"
         combine_sequential_gopro
         find . -type d -empty -delete
     )
