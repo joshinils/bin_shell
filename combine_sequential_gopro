@@ -9,12 +9,14 @@ for dir in *; do
     fi
     first=${files[0]}
     # echo $last $first
-    if [[ $last =~ (.*)/.*([0-9])9999\.JPG ]]; then
+    if [[ $last =~ (.*)/G0*([0-9]*)9999\.JPG ]]; then
         dir1=${BASH_REMATCH[1]}
         num1=${BASH_REMATCH[2]}
-        if [[ $first =~ (.*)/.*([0-9])0001\.JPG ]]; then
+        if [[ $first =~ (.*)/G0*([0-9]*)0001\.JPG ]]; then
             dir2=${BASH_REMATCH[1]}
             num2=${BASH_REMATCH[2]}
+            echo $dir1 $num1
+            echo $dir2 $num2
             if [[ $(($num1+1)) == $num2 ]]; then
                 # echo are sequential
                 mkdir ${dir1}_$dir2
