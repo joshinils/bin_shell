@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+state_json=$(curl -s -X GET --url $(cat ~/settings/hue_lights_secret)/lights/$1)
+is_on=$(echo $state_json | jq -r '.state.on')
+light_name=$(echo $state_json | jq -r '.name')
+
+if [ -z ${2} ]; then
+    if [ $is_on == "true" ]; then
+        next_on_off_state="false"
+    elif [ $is_on == "false" ]; then
+        next_on_off_state="true"
+    fi
+else
+    if [ $2 == "on" ]; then
+        next_on_off_state="true"
+    elif [ $2 == "off" ]; then
+        next_on_off_state="false"
+    else
+        next_on_off_state=$2
+    fi
+fi
+
+post_return=$(curl -s -X PUT --data "{\"on\":$next_on_off_state}" --url $(cat ~/settings/hue_lights_secret)/lights/$1/state)
+success=$(echo ${post_return:1:-1} | jq -r '.success')
+
+if [[ "null" != $success ]]; then
+    echo -n \"$light_name\"
+    if [ -z ${2} ]; then
+        echo -n " toggled to "
+    else
+        echo -n " is now "
+    fi
+    if [ $next_on_off_state == "true" ]; then
+        echo on
+    else
+        echo off
+    fi
+else
+    echo failed to change light $1
+fi
