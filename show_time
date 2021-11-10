@@ -20,7 +20,7 @@ min=0
 hour=0
 day=0
 if (( $(echo "$num > 59" |bc -l) )); then
-    sec=$(echo "$num%60/1"|bc)
+    sec=$(echo "scale=0; $num%60"|bc)
     num=$(echo "$num/60/1"|bc)
     # now num is an integer which bash can handle
     if (( $(echo "$num > 59" |bc -l) ));then
@@ -38,7 +38,7 @@ if (( $(echo "$num > 59" |bc -l) )); then
 else
     sec=$num
 fi
-if (( $(echo "$day  == 0" |bc -l) )); then printf '  :'; else printf '%02g:' $day ; fi
-if (( $(echo "$hour == 0" |bc -l) )); then printf '  :'; else printf '%02g:' $hour; fi
-if (( $(echo "$min  == 0" |bc -l) )); then printf '  :'; else printf '%02g:' $min ; fi
-printf '%02f\n' $sec
+if (( $(echo "$day  == 0" |bc -l) )); then printf '   :'; else printf '%02gd:' $day ; fi
+if (( $(echo "$hour == 0" |bc -l) )); then printf '   :'; else printf '%02gh:' $hour; fi
+if (( $(echo "$min  == 0" |bc -l) )); then printf '   :'; else printf '%02gm:' $min ; fi
+printf '%05.2f\n' $sec
