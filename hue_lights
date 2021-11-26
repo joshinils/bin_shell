@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-state_json=$(curl -s -X GET --url $(cat ~/settings/hue_lights_secret)/lights/$1)
+# make callable from anywhere
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+
+state_json=$(curl -s --connect-timeout 1 --max-time 1 --retry 60 --retry-delay 0 --retry-max-time 60 -X GET --url $(cat ~/settings/hue_lights_secret)/lights/$1)
 is_on=$(echo $state_json | jq -r '.state.on')
 light_name=$(echo $state_json | jq -r '.name')
 
@@ -20,7 +23,7 @@ else
     fi
 fi
 
-post_return=$(curl -s -X PUT --data "{\"on\":$next_on_off_state}" --url $(cat ~/settings/hue_lights_secret)/lights/$1/state)
+post_return=$(curl -s --connect-timeout 1 --max-time 1 --retry 60 --retry-delay 0 --retry-max-time 60 -X PUT --data "{\"on\":$next_on_off_state}" --url $(cat ~/settings/hue_lights_secret)/lights/$1/state)
 success=$(echo ${post_return:1:-1} | jq -r '.success')
 
 if [[ "null" != $success ]]; then
@@ -37,4 +40,7 @@ if [[ "null" != $success ]]; then
     fi
 else
     echo failed to change light $1
+    exit 1
 fi
+
+exit 0
