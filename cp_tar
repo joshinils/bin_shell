@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+mkdir $2 -p
+
 src_space=$(du $1 -s --block-size 1|cut -f1)
 dst_space=$(df -P $2 --block-size 1| awk 'NR==2 {print $4}')
 
@@ -10,5 +12,4 @@ if (( $src_space >= $dst_space )); then
     exit 1
 fi
 
-mkdir $2 -p
 tar cf - $1 | pv -pteIrab -i 0.1 -s $src_space | (cd $2 && tar xf -)
