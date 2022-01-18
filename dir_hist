@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+python3 ~/settings/bin_shell/dir_hist.py $PWD
