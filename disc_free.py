@@ -87,9 +87,9 @@ def make_size_str(size_B: int) -> str:
     return res
 
 
-totalstr = "total" + make_size_str(total)
-used_str = "used " + make_size_str(used)
-free_str = "free " + make_size_str(free)
+totalstr = make_size_str(total)
+used_str = make_size_str(used)
+free_str = make_size_str(free)
 
 longest_str_size = max(len(totalstr), len(used_str), len(free_str))
 
@@ -98,6 +98,6 @@ mount_info = mount
 if mount_point != mount:
     mount_info += " " + mount_point
 
-print(totalstr.rjust(longest_str_size), mount_info)
-print(used_str.rjust(longest_str_size) + f"{used / total * 100:10.5f}%")
-print(free_str.rjust(longest_str_size) + f"{free / total * 100:10.5f}%")
+print("total", totalstr.rjust(longest_str_size), mount_info)
+print("used ", used_str.rjust(longest_str_size) + f"{used / total * 100:10.5f}%")
+print("free ", free_str.rjust(longest_str_size) + f"{free / total * 100:10.5f}%")
