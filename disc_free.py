@@ -32,7 +32,7 @@ total, used, free = shutil.disk_usage(cwd)
 
 
 def concat_size_tuple(tup) -> str:
-    return f"{tup[0]:4}{tup[1]}"
+    return f"{tup[0]:5}{tup[1]}"
 
 
 def make_size_str(size_B: int) -> str:
