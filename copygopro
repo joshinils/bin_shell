@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 (
-    DIR="$HOME/Pictures/streetview/neue_bilder_unsortiert/$(date '+%Y-%m-%dT%H%M%S')_gopro8"
+    DIR="$HOME/Pictures/streetview/neue_bilder_unsortiert/$(date '+%Y-%m-%dT%H%M%S')_gopro"
     mkdir $DIR -p
     rsync -Pavh --info=progress2 --info=name0 --stats --progress ./* $DIR
 
