@@ -8,8 +8,8 @@ find . -type d -empty -delete
 picture_total=$(ls *.JPG -1q | wc -l)
 
 # move images into folders by date taken
-exiftool '-Directory<DateTimeOriginal' -d ./%Y-%m-%d_gopro8 *.JPG |& pv -lpteI -s $picture_total -i 0.1 1> /dev/null
-exiftool '-Directory<CreateDate' -q -q -d ./%Y-%m-%d_gopro8 *.JPG |& pv -lpteI -s $picture_total -i 0.1 1> /dev/null
+exiftool '-Directory<DateTimeOriginal' -d ./%Y-%m-%d_gopro *.JPG |& pv -lpteI -s $picture_total -i 0.1 1> /dev/null
+exiftool '-Directory<CreateDate' -q -q -d ./%Y-%m-%d_gopro *.JPG |& pv -lpteI -s $picture_total -i 0.1 1> /dev/null
 
 find . -type d -empty -delete
 
