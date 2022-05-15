@@ -24,6 +24,12 @@ for dir in $(find * -maxdepth 0 -type d); do
             mkdir --parent D_$i
             mv G$i*.JPG D_$i 2>/dev/null
         done
+        for i in {A..Z}; do
+            for j in {A..Z}; do
+                mkdir --parent D_$i$j
+                mv GS$i$j*.JPG D_$i$j 2>/dev/null
+            done
+        done
         find . -type d -empty -delete
     )
     find . -type d -empty -delete
