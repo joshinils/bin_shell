@@ -2,7 +2,7 @@
 
 # https://unix.stackexchange.com/questions/92447/bash-script-to-get-ascii-values-for-alphabet
 ord() {
-  LC_CTYPE=C printf '%d' "'$1"
+    LC_CTYPE=C printf '%d' "'$1"
 }
 
 last=""
@@ -22,17 +22,17 @@ for dir in *; do
         dir1=${BASH_REMATCH[1]}
         cha1=${BASH_REMATCH[2]: -1}
         num1=${BASH_REMATCH[3]}
-        # echo $dir1 $num1 $cha1
+        echo num1 $dir1 $num1 $cha1
         if [[ "$first" =~ (.*)/G([A-Z]*)([0-9]*)0001\.JPG ]]; then
             dir2=${BASH_REMATCH[1]}
             cha2=${BASH_REMATCH[2]: -1}
             num2=${BASH_REMATCH[3]}
-            # echo $dir2 $num2 $cha2
-            if [[ $(($num1+1)) == $num2 ]] || [[ $(($(ord $cha1)+1)) == $(ord $cha2) ]]; then
-                # echo are sequential
+            echo num2 $dir2 $num2 $cha2
+            if [[ $(($num1+1)) == $(($num2+0)) ]] || [[ $(($(ord $cha1)+1)) == $(ord $cha2) ]]; then
+                echo are sequential
                 mkdir ${dir1}_$dir2
-                mv $dir1/* ${dir1}_$dir2
-                mv $dir2/* ${dir1}_$dir2
+                mv -v $dir1/* ${dir1}_$dir2
+                mv -v $dir2/* ${dir1}_$dir2
             fi
         fi
     fi

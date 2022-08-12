@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+framerate=$(ffprobe -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate "${1}")
+smoothing_val=$(echo $framerate / 4 | bc)
+smoothing=$(( $smoothing_val > 10 ? $smoothing_val : 10 ))
+
+crf=00
+out_name="${1}"_stab
+
+
+ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabdetect=accuracy=15:result="${out_name}.trf" -f null - -y
+ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabtransform=zoom=0:crop=black:optzoom=0:smoothing="${smoothing}":input="${out_name}.trf" -crf ${crf} "${out_name}.mkv" -y
+
+rm -f "${out_name}.trf"
+
+# ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabdetect=accuracy=15:shakiness=1:result="${1}_shakiness=1.trf" -f null - -y
+# ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabdetect=accuracy=15:shakiness=10:result="${1}_shakiness=10.trf" -f null - -y
+
+# ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabtransform=zoom=0:crop=keep:optzoom=0:input="${1}_shakiness=1.trf"  "${1}_stab_shakiness=1_crop=keep.mkv" -y
+# ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabtransform=zoom=0:crop=keep:optzoom=0:input="${1}_shakiness=5.trf"  "${1}_stab_shakiness=5_crop=keep.mkv" -y
+# ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabtransform=zoom=0:crop=keep:optzoom=0:input="${1}_shakiness=10.trf" "${1}_stab_shakiness=10_crop=keep.mkv" -y
+
+# ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabtransform=zoom=0:crop=black:optzoom=0:input="${1}_shakiness=1.trf"  "${1}_stab_shakiness=1_crop=black.mkv" -y
+# ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabtransform=zoom=0:crop=black:optzoom=0:input="${1}_shakiness=5.trf"  "${1}_stab_shakiness=5_crop=black.mkv" -y
+# ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabtransform=zoom=0:crop=black:optzoom=0:input="${1}_shakiness=10.trf" "${1}_stab_shakiness=10_crop=black.mkv" -y

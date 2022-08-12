@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+file_name_combined="${1}"_"${2}"
+list_name="${file_name_combined}".ffmpeg_combine_list
+
+# setup list of files to be combined for ffmpeg
+echo "" > "${list_name}"
+echo "file '${1}'" >> "${list_name}"
+echo "file '${2}'" >> "${list_name}"
+
+# combine
+ffmpeg -f concat -safe 0 -i "${list_name}" -c copy "${file_name_combined}" -y
+
+# cleanup
+# rm -f "${1}" "${2}"
+rm "${list_name}"

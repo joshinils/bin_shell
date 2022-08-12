@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+ffmpeg -i "${1}" -vf histeq=strength=0.025:intensity=0.25 -crf 15 "${1}"_brightened.mkv

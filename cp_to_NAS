@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 #tar -c $1 | ssh nials@192.168.2.108 'tar -xvf - -C /media/wd4-r1/data/streetview/gopro' |& pv -lpteI -s $total -i 0.1
-tar -c $1 | pv -pteIbar -i 0.1 -s $(du $1 -sb|cut -f1) | ssh nials@nals-NAS 'tar --warning=no-timestamp -xf - -C /media/wd4-r1/data/streetview/gopro'
+tar -c "${1}" | pv -pteIbar -i 0.1 -s $(du "${1}" -sb|cut -f1) | ssh nials@nals-NAS 'tar --warning=no-timestamp -xf - -C /media/wd4-r1/data/streetview/gopro'
