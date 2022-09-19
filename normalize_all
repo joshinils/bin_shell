@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+find . -maxdepth 1 -name "*.mp4" | while read fname; do
+    echo "$fname"
+    normalize "$fname"
+    mkdir normalize_done -p
+    mv -n "$fname" normalize_done
+done
