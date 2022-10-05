@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+filename=$(basename -- "${1}")
+extension="${filename##*.}"
+filename="${filename%.*}"
+
+out_name="${filename}_${2}.${extension}"
+
+# fucks sake ffmpeg, colons are valid in filenames
+out_name="${out_name//:/COLON}"
+in_name="${1//:/COLON}"
+mv "${1}" "${in_name}"
+
+if [ "$#" -le 1 ]; then
+    echo "Illegal number of parameters"
+    exit
+elif [ "$#" -le 2 ]; then
+    ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" "${out_name}"
+elif [ "$#" -le 3 ]; then
+    ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" "${out_name}"
+elif [ "$#" -le 4 ]; then
+    ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" -metadata:s:a:2 language="${4}" "${out_name}"
+elif [ "$#" -le 5 ]; then
+    ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" -metadata:s:a:2 language="${4}" -metadata:s:a:3 language="${5}" "${out_name}"
+fi
+
+# potentially remove COLON-variant
+mv "${in_name}" "${1}" 2&> /dev/null # mute error if same file
+
+# replace old version with correctly named version
+mv "${out_name}" "${1}"
+
+# ffmpeg -i Die\ Farbe\ des\ Geldes_1986.mp4 -map 0 -c copy -metadata:s:a:1 language=deu -metadata:s:a:3 language=deu -metadata:s:a:3 title="Audiodeskription" farbe.mp4
