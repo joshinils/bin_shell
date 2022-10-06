@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+if [ "$#" -le 1 ]; then
+    echo "no language code given, moving \"${1}\" anyway assuming it is labeled correctly"
+elif [ "$#" -le 2 ]; then
+    ffmpeg_set_language "${1}" "${2}"
+elif [ "$#" -le 3 ]; then
+    ffmpeg_set_language "${1}" "${2}" "${3}"
+elif [ "$#" -le 4 ]; then
+    ffmpeg_set_language "${1}" "${2}" "${3}" "${4}"
+elif [ "$#" -le 5 ]; then
+    ffmpeg_set_language "${1}" "${2}" "${3}" "${4}" "${5}"
+fi
+
+wait
+
+mv -vn "${1}" /media/wd4-r1/data/filme_neu/ok_subtitles
+/media/wd4-r1/data/filme_neu/mv_ok_subtitles.sh

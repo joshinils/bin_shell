@@ -25,9 +25,12 @@ elif [ "$#" -le 5 ]; then
 fi
 
 # potentially remove COLON-variant
-mv "${in_name}" "${1}" 2&> /dev/null # mute error if same file
+mv -f "${in_name}" "${1}" 2> /dev/null # mute error if same file
 
 # replace old version with correctly named version
 mv "${out_name}" "${1}"
+
+
+
 
 # ffmpeg -i Die\ Farbe\ des\ Geldes_1986.mp4 -map 0 -c copy -metadata:s:a:1 language=deu -metadata:s:a:3 language=deu -metadata:s:a:3 title="Audiodeskription" farbe.mp4
