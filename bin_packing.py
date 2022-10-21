@@ -21,7 +21,7 @@ def create_data_model(folder: str):
     data['weights'] = weights
     data['items'] = list(range(len(weights)))
     data['bins'] = data['items']
-    data['bin_capacity'] = 150
+    data['bin_capacity'] = 150 / 4
     data["names"] = dirlist
     return data
 
