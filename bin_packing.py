@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 
-def create_data_model(folder: str):
+def create_data_model(folder: str, bin_capacity: float):
     dirlist = os.listdir(folder)
     weights = []
     shuffle(dirlist)
@@ -17,19 +17,21 @@ def create_data_model(folder: str):
         weights.append(size)
 
     data = {}
-    # weights = [48, 30, 19, 36, 36, 27, 42, 42, 36, 24, 30]
     data['weights'] = weights
     data['items'] = list(range(len(weights)))
     data['bins'] = data['items']
-    data['bin_capacity'] = 150 / 4
+    data['bin_capacity'] = bin_capacity
     data["names"] = dirlist
     return data
 
 
 def main():
     folder = sys.argv[1]
-
-    data = create_data_model(folder)
+    if len(sys.argv) > 2:
+        bin_capacity = float(sys.argv[2])
+    else:
+        raise ValueError("need to give second argument, bin_capacity")
+    data = create_data_model(folder, bin_capacity)
 
     # Create the mip solver with the SCIP backend.
     solver = pywraplp.Solver.CreateSolver('SCIP')
@@ -57,8 +59,7 @@ def main():
     # The amount packed in each bin cannot exceed its capacity.
     for j in data['bins']:
         solver.Add(
-            sum(x[(i, j)] * data['weights'][i] for i in data['items']) <= y[j] *
-            data['bin_capacity'])
+            sum(x[(i, j)] * data['weights'][i] for i in data['items']) <= y[j] * data['bin_capacity'])
 
     # Objective: minimize the number of bins used.
     solver.Minimize(solver.Sum([y[j] for j in data['bins']]))
