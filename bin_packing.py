@@ -28,7 +28,7 @@ def create_data_model(folder: str, bin_capacity: float):
 def main():
     folder = sys.argv[1]
     if len(sys.argv) > 2:
-        bin_capacity = sys.argv[2]
+        bin_capacity = float(sys.argv[2])
     else:
         raise ValueError("need to give second argument, bin_capacity")
     data = create_data_model(folder, bin_capacity)
@@ -59,8 +59,7 @@ def main():
     # The amount packed in each bin cannot exceed its capacity.
     for j in data['bins']:
         solver.Add(
-            sum(x[(i, j)] * data['weights'][i] for i in data['items']) <= y[j] *
-            data['bin_capacity'])
+            sum(x[(i, j)] * data['weights'][i] for i in data['items']) <= y[j] * data['bin_capacity'])
 
     # Objective: minimize the number of bins used.
     solver.Minimize(solver.Sum([y[j] for j in data['bins']]))
