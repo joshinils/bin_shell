@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+find * -maxdepth 0 -type f -name "*.mp4" -print0 | while IFS= read -r -d '' file; do
+    echo "file = $file"
+    sem --lb -j $(grep -c ^processor /proc/cpuinfo) gen_thumbs "'${file}'" $1
+done
+sem --wait
+wait
+echo ""
