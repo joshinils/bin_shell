@@ -2,6 +2,10 @@
 
 find . -maxdepth 1 -name "*.mp4" | while read fname; do
     echo "$fname"
-    sem --lb -j $(grep -c ^processor /proc/cpuinfo) "normalize '$fname' && mkdir normalized_done -p && mv -n '$fname' normalized_done"
+    sem --lb -j $(grep -c ^processor /proc/cpuinfo) "normalize \"$fname\" && mkdir normalized_done -p && mv -n \"$fname\" normalized_done"
+done
+find . -maxdepth 1 -name "*.mkv" | while read fname; do
+    echo "$fname"
+    sem --lb -j $(grep -c ^processor /proc/cpuinfo) "normalize \"$fname\" && mkdir normalized_done -p && mv -n \"$fname\" normalized_done"
 done
 sem --wait
