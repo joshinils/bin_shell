@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 
+extension="${1##*.}"
 codec=$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "${1}")
 sample_rate=$(ffprobe -v error -select_streams a -of default=noprint_wrappers=1:nokey=1 -show_entries stream=sample_rate "${1}"|head -n1)
 mkdir normalized -p
-ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension mp4 -c:a "${codec}" "${1}"
-echo "done running: ffmpeg-normalize -pr -f -ar \"${sample_rate}\" --extension mp4 -c:a \"${codec}\" \"${1}\""
+
+if [ $extension = "ogg" ] || [ $extension = "m4a" ] || [ $extension = "opus" ]; then
+    ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension ogg -t -10 -c:a libvorbis "${1}" -vn >> "$1".log 2>&1
+    echo "done running: ffmpeg-normalize -pr -f -ar  \"${sample_rate} \" --extension ogg -t -10 -c:a libvorbis  \"${1} \" -vn >>  \"$1 \".log 2>&1"
+else
+    ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension $extension -c:a "${codec}" "${1}" >> "$1".log 2>&1
+    echo "done running: ffmpeg-normalize -pr -f -ar  \"${sample_rate} \" --extension $extension -c:a  \"${codec} \"  \"${1} \" >>  \"$1 \".log 2>&1"
+fi
+
+rm -f "$1".log
