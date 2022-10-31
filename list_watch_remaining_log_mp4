@@ -27,5 +27,5 @@ find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
 done
 echo "" >> $var
 
-column -t -s "@" $var
+column -t -s "|@" $var
 rm -f $var
