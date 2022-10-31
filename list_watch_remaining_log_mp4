@@ -24,9 +24,12 @@ touch $var
 find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
     tail_log=$(tail -n 1 "${fname}" | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g")
     combined_line=$(echo "$tail_log @ ${fname}")
+    combined_line="${combined_line/\%\|  /\%\|MM}"
     combined_line="${combined_line/\%\|/\%@\|}"
     combined_line="${combined_line/\| /\|@}"
+    combined_line="${combined_line/\|MM/\|  }"
     combined_line="${combined_line/\/100 \[/\/100@\[}"
+    combined_line="${combined_line/Second Pass:  /Second Pass: }"
 
     echo "${combined_line}" >> $var
 done
