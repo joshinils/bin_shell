@@ -15,7 +15,7 @@ fi
 if [ $waiting -gt 0 ] ; then
     echo $waiting Waiting|figlet -kct -f standard
 fi
-echo $(echo "scale=2; 100 * $remaining /  $total" | bc ) % Done|figlet -kct -f standard
+echo $(echo "scale=2; 100 - 100 * $remaining /  $total" | bc ) % Done|figlet -kct -f standard
 
 width=$(echo $COLUMNS / 2 | bc)
 var="list_watch_reaminin_output"
