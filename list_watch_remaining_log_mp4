@@ -2,7 +2,7 @@
 
 running=$(ls *.log|wc -l)
 remaining=$(ls *.mp4|wc -l)
-done=$(ls normalized/*.mp4|wc -l)
+done=$(ls normalized/*.mp4 2>/dev/null|wc -l)
 total=$(echo $done + $remaining|bc)
 waiting=$(echo $remaining - $running|bc)
 
