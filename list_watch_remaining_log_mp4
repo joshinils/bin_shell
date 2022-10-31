@@ -22,10 +22,15 @@ var="list_watch_reaminin_output"
 rm -f $var
 touch $var
 find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
-    tail -n 1 "${fname}" | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" >> $var
-    echo " @ ${fname}" >> $var
+    tail_log=$(tail -n 1 "${fname}" | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g")
+    combined_line=$(echo "$tail_log @ ${fname}")
+    combined_line="${combined_line/\%\|/\%@\|}"
+    combined_line="${combined_line/\| /\|@}"
+    combined_line="${combined_line/\/100 \[/\/100@\[}"
+
+    echo "${combined_line}" >> $var
 done
 echo "" >> $var
 
-column -t -s "|@" $var
+column -t -s "@" $var
 rm -f $var
