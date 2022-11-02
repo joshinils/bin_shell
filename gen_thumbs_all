@@ -10,6 +10,7 @@ function kill_sem() {
 
 find * -maxdepth 0 -type f -name "*.mp4" -print0 | while IFS= read -r -d '' file; do
     echo "file = $file"
-    sem --no-notice --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) gen_thumbs "'${file}'" $1
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) gen_thumbs "\"${file}\"" "${1}" "${2}"
 done
-sem --no-notice --id $$ --wait
+sem --id $$ --wait
+wait
