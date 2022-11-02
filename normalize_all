@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 
+trap kill_sem INT
+
+function kill_sem() {
+        for s in ~/.parallel/semaphores/id-$$/*@*;
+        do
+                kill -15 -- -$(basename ${s%%@*})
+        done
+}
+
 find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" \) | while read fname; do
-    echo "$fname"
     rm -f "$fname".log
-    sem --lb -j $(grep -c ^processor /proc/cpuinfo) "normalize \"$fname\" >> \"$fname\".log 2>&1 && mkdir normalized_done -p && mv -n \"$fname\" normalized_done && rm -f \"$fname\".log"
+    cores=$(grep -c ^processor /proc/cpuinfo)
+    parallel --semaphore --id $$ --lb -j $cores "~/settings/bin_shell/normalize \"${fname}\" >> \"${fname}.log\" 2>&1 && mkdir normalized_done -p && mv -n \"${fname}\" normalized_done && rm -f \"${fname}.log\""
     rm -f "$fname".log
 done
-sem --wait
+parallel --semaphore --id $$ --wait
 wait
