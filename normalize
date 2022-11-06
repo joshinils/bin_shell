@@ -11,8 +11,8 @@ if [ $extension = "ogg" ] || [ $extension = "m4a" ] || [ $extension = "opus" ]; 
     ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension ogg -t -10 -c:a libvorbis "${1}" -vn >> "$1".log 2>&1
     echo "done running: ffmpeg-normalize -pr -f -ar  \"${sample_rate} \" --extension ogg -t -10 -c:a libvorbis  \"${1} \" -vn >>  \"$1 \".log 2>&1"
 else
-    ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension $extension -c:a "${codec}" "${1}" >> "$1".log 2>&1
-    echo "done running: ffmpeg-normalize -pr -f -ar  \"${sample_rate} \" --extension $extension -c:a  \"${codec} \" -strict -2 \"${1} \" >>  \"$1 \".log 2>&1"
+    ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension $extension -c:a "${codec}" "${1}" -e "-strict -2" >> "$1".log 2>&1
+    echo "done running: ffmpeg-normalize -pr -f -ar  \"${sample_rate} \" --extension $extension -c:a  \"${codec}\" \"${1}\" -e \"-strict -2\" >> \"$1 \".log 2>&1"
 fi
 
 rm -f "$1".log
