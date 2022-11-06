@@ -42,3 +42,6 @@ echo "" >> $var
 
 column -t -s "@" $var
 rm -f $var
+
+echo ""
+screen -ls
