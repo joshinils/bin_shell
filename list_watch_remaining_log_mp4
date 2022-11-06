@@ -23,7 +23,9 @@ if [ $waiting -gt 0 ] ; then
     echo $waiting Waiting|figlet -kct -f standard
 fi
 if [ $total -gt 0 ] ; then
-    echo $(echo "scale=2; 100 - 100 * $remaining / $total" | bc ) % Done|figlet -kct -f standard
+    if [ $total -gt $remaining ] ; then
+        echo $(echo "scale=2; 100 - 100 * $remaining / $total" | bc ) % Done|figlet -kct -f standard
+    fi
 fi
 
 width=$(echo $COLUMNS / 2 | bc)
