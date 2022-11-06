@@ -3,8 +3,12 @@
 disc_free.py
 
 running=$(ls *.log 2>/dev/null|wc -l)
-remaining=$(ls *.mp4 2>/dev/null|wc -l)
-done=$(ls normalized/*.mp4 2>/dev/null|wc -l)
+remaining_mp4=$(ls *.mp4 2>/dev/null|wc -l)
+remaining_mkv=$(ls *.mkv 2>/dev/null|wc -l)
+remaining=$(($remaining_mp4 + $remaining_mkv))
+done_mp4=$(ls normalized/*.mp4 2>/dev/null|wc -l)
+done_mkv=$(ls normalized/*.mkv 2>/dev/null|wc -l)
+done=$(($done_mp4 + $done_mkv))
 total=$(echo $done + $remaining|bc)
 waiting=$(echo $remaining - $running|bc)
 
