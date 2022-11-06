@@ -48,4 +48,5 @@ column -t -s "@" $var
 rm -f $var
 
 echo ""
+echo $PWD
 screen -ls
