@@ -2,15 +2,15 @@
 trap kill_sem INT
 
 function kill_sem() {
-        for s in ~/.parallel/semaphores/id-$$/*@*;
-        do
-                kill -15 -- -$(basename ${s%%@*})
-        done
+    for s in ~/.parallel/semaphores/id-$$/*@*;
+    do
+        kill -15 -- -$(basename ${s%%@*})
+    done
 }
 
-find * -maxdepth 0 -type f -name "*.mp4" -print0 | while IFS= read -r -d '' file; do
-    echo "file = $file"
-    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) gen_thumbs "\"${file}\"" "${1}" "${2}"
+find * -maxdepth 0 -type f \( -name "*.mp4" -o -name "*.mkv" \) -print0 | while IFS= read -r -d '' file; do
+    # echo "file = $file"
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) gen_thumbs "\"${file}\"" "${1}" "${2}" "${3}"
 done
 sem --id $$ --wait
 wait
