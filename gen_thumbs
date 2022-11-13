@@ -10,7 +10,7 @@ else
     out_name="${1%\.*}"-"${4}".png
 fi
 
-if [[ "$yes_no" == "-n" ]] && [ -f ${out_name} ]; then
+if [[ "$yes_no" == "-n" ]] && [[ -f ${out_name} ]]; then
     exit
 fi
 
