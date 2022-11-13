@@ -9,10 +9,12 @@ function kill_sem() {
     done
 }
 
+max_threads=${1:-12}
+
 find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" \) | while read fname; do
     rm -f "$fname".log
     cpus=$(grep -c ^processor /proc/cpuinfo)
-    cores=$([ $cpus -le "12" ] && echo "$cpus" || echo "12")
+    cores=$([ $cpus -le "$max_threads" ] && echo "$cpus" || echo "$max_threads")
     parallel --semaphore --id $$ --lb -j "${cores}" "nice -n 20 normalize \"${fname}\" >> \"${fname}.log\" 2>&1 && mkdir normalized_done -p && mv -n \"${fname}\" normalized_done && rm -f \"${fname}.log\""
     rm -f "$fname".log
 done
