@@ -3,14 +3,21 @@
 echo $1
 grid=${2:-8}
 yes_no=${3:--y}
-frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 "${1}")
-# echo frames:$frames
-n_th_frame=$(echo \($frames - 240\) / \($grid \* $grid\) | bc)
-# echo n_th_frame:$n_th_frame
+
 if [ -z "${4}" ]; then
     out_name="${1%\.*}".png
 else
     out_name="${1%\.*}"-"${4}".png
 fi
+
+if [[ "$yes_no" == "-n" ]] && [ -f ${out_name} ]; then
+    exit
+fi
+
+frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 "${1}")
+# echo frames:$frames
+n_th_frame=$(echo \($frames - 240\) / \($grid \* $grid\) | bc)
+# echo n_th_frame:$n_th_frame
+
 # ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=320:180,tile=${grid}x${grid}" "${out_name// /_}" -y </dev/null
 ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=iw/$grid*3:-1,tile=${grid}x${grid}" "${out_name}" "${yes_no}" </dev/null
