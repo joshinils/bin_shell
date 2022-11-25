@@ -11,7 +11,7 @@ function kill_sem() {
 
 max_threads=${1:-12}
 
-find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" \) | while read fname; do
+find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" -o -name "*.webm" \) | while read fname; do
     rm -f "$fname".log
     cpus=$(grep -c ^processor /proc/cpuinfo)
     cores=$([ $cpus -le "$max_threads" ] && echo "$cpus" || echo "$max_threads")
