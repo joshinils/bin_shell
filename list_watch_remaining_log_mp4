@@ -96,10 +96,30 @@ find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
     combined_line="${combined_line/Stream 8\/9:/Stream ·······8•\/9:}"
     combined_line="${combined_line/Stream 9\/9:/Stream ········9\/9:}"
 
-    echo "${combined_line}" | sed -e 's/\[\([[:digit:]]:[[:digit:]]\+:[[:digit:]]\+\)/\[ \1/g' -e 's/\[\([[:digit:]]\+:[[:digit:]]\+\)/\[   \1/g' -e 's/<\([[:digit:]]\+:[[:digit:]]\+\),/<   \1,/g' -e 's/<\([[:digit:]]:[[:digit:]]\+:[[:digit:]]\+\),/< \1,/g' -e 's/</ < /g' -e 's/< ?,/<      ?  ,/g' >> $var
+    echo "${combined_line}" | sed \
+-e 's/\[\([[:digit:]]:[[:digit:]]\+:[[:digit:]]\+\)/\[ \1/g' \
+-e 's/\[\([[:digit:]]\+:[[:digit:]]\+\)/\[   \1/g' \
+-e 's/<\([[:digit:]]\+:[[:digit:]]\+\),/<   \1,/g' \
+-e 's/<\([[:digit:]]:[[:digit:]]\+:[[:digit:]]\+\),/< \1,/g' \
+-e 's/</ < /g' -e 's/< ?,/<      ?  ,/g' \
+-e 's/, ?it\/s\]/,   ?  it\/s\]/g' \
+-e 's/<    00:0\([[:digit:]]\),/<        \1,/g' \
+-e 's/<    00:\([[:digit:]]\+\),/<       \1,/g' \
+-e 's/<    0\([[:digit:]]:[[:digit:]]\+\),/<     \1,/g' \
+-e 's/<    \([[:digit:]]\+:[[:digit:]]\+\),/<    \1,/g' \
+-e 's/\[   00:0\([[:digit:]]\) </\[        \1,/g' \
+-e 's/\[   00:\([[:digit:]]\+\) </\[       \1,/g' \
+-e 's/\[   0\([[:digit:]]:[[:digit:]]\+\) </\[     \1,/g' \
+-e 's/\[   \([[:digit:]]\+:[[:digit:]]\+\) </\[    \1,/g' \
+>> $var
     # echo "${combined_line}" >> $var
 done
 echo "" >> $var
+
+#  [   01:04 <    00:17,  1.17it/s]
+#  1.16s/it]    ./The Gentlemen_2019 - bonus 07.mp4.log
+#   , ?it/s]        ./Willkommen bei den Sch'tis_2008 - bonus 03.mp4.log
+
 
 cat $var | sort -r > var2
 mv var2 $var
