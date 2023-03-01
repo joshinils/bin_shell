@@ -96,7 +96,7 @@ find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
     combined_line="${combined_line/Stream 8\/9:/Stream ·······8•\/9:}"
     combined_line="${combined_line/Stream 9\/9:/Stream ········9\/9:}"
 
-    echo "${combined_line}" | sed -e 's/\[\([[:digit:]]:[[:digit:]]\+:[[:digit:]]\+\)/\[ \1/g' -e 's/\[\([[:digit:]]\+:[[:digit:]]\+\)/\[   \1/g' -e 's/<\([[:digit:]]\+:[[:digit:]]\+\),/<   \1,/g' -e 's/<\([[:digit:]]:[[:digit:]]\+:[[:digit:]]\+\),/< \1,/g' -e 's/</ < /g' >> $var
+    echo "${combined_line}" | sed -e 's/\[\([[:digit:]]:[[:digit:]]\+:[[:digit:]]\+\)/\[ \1/g' -e 's/\[\([[:digit:]]\+:[[:digit:]]\+\)/\[   \1/g' -e 's/<\([[:digit:]]\+:[[:digit:]]\+\),/<   \1,/g' -e 's/<\([[:digit:]]:[[:digit:]]\+:[[:digit:]]\+\),/< \1,/g' -e 's/</ < /g' -e 's/< ?,/<    ?   ,/g' >> $var
     # echo "${combined_line}" >> $var
 done
 echo "" >> $var
