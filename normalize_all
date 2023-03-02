@@ -10,13 +10,23 @@ function kill_sem() {
 }
 
 max_threads=${1:-12}
+cpus=$(grep -c ^processor /proc/cpuinfo)
+cores=$([ $cpus -le "$max_threads" ] && echo "$cpus" || echo "$max_threads")
 
-find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" -o -name "*.webm" \) | while read fname; do
-    rm -f "$fname".log
-    cpus=$(grep -c ^processor /proc/cpuinfo)
-    cores=$([ $cpus -le "$max_threads" ] && echo "$cpus" || echo "$max_threads")
-    parallel --semaphore --id $$ --lb -j "${cores}" "nice -n 20 normalize \"${fname}\" >> \"${fname}.log\" 2>&1 && mkdir normalized_done -p && mv -n \"${fname}\" normalized_done && rm -f \"${fname}.log\""
-    rm -f "$fname".log
+loop=true
+while [ "$loop" = "true" ]; do
+    if [ $(find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" -o -name "*.webm" \)|wc -l) -le 0 ] ; then
+        break
+    fi
+
+    find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" -o -name "*.webm" \) | while read fname; do
+        if [ -s "$fname".log ] ; then
+            continue
+        fi
+        parallel --semaphore --id $$ --lb -j "${cores}" "nice -n 20 normalize \"${fname}\" >> \"${fname}.log\" 2>&1 && mkdir normalized_done -p && mv -n \"${fname}\" normalized_done && rm -f \"${fname}.log\""
+        break
+    done
+    sleep 1s
 done
 
 parallel --semaphore --id $$ --wait
