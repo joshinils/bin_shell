@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo $(echo "scale=5; 50 * $(ls *.png|wc -l) / $(ls *.mp4|wc -l)" | bc ) %|figlet -kct -f standard
+echo $(ls *.png|wc -l) / $(echo "2 * $(ls *.mp4|wc -l)" | bc ) %|figlet -kct -f standard
