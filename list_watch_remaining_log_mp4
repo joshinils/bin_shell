@@ -107,10 +107,10 @@ find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
 -e 's/<    00:\([[:digit:]]\+\),/<       \1,/g' \
 -e 's/<    0\([[:digit:]]:[[:digit:]]\+\),/<     \1,/g' \
 -e 's/<    \([[:digit:]]\+:[[:digit:]]\+\),/<    \1,/g' \
--e 's/\[   00:0\([[:digit:]]\) </\[        \1 </g' \
--e 's/\[   00:\([[:digit:]]\+\) </\[       \1 </g' \
--e 's/\[   0\([[:digit:]]:[[:digit:]]\+\) </\[     \1 </g' \
--e 's/\[   \([[:digit:]]\+:[[:digit:]]\+\) </\[    \1 </g' \
+-e 's/\[   00:0\([[:digit:]]\) </\[       \1 </g' \
+-e 's/\[   00:\([[:digit:]]\+\) </\[      \1 </g' \
+-e 's/\[   0\([[:digit:]]:[[:digit:]]\+\) </\[    \1 </g' \
+-e 's/\[   \([[:digit:]]\+:[[:digit:]]\+\) </\[   \1 </g' \
 >> $var
     # echo "${combined_line}" >> $var
 done
