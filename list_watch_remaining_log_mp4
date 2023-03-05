@@ -48,7 +48,7 @@ find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
     combined_line="${combined_line/\| /\|@}"
     combined_line="${combined_line/\|MM/\|  }"
     combined_line="${combined_line/\/100 \[/\/100@\[}"
-    combined_line="${combined_line/Second Pass: /9       Second Pass: }"
+    combined_line="${combined_line/Second Pass: /9      Second Pass: }"
 
     combined_line="${combined_line/Stream 1\/1:/8Stream         1\/1:}"
     combined_line="${combined_line/Stream 1\/2:/7Stream        1•\/2:}"
@@ -95,6 +95,43 @@ find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
     combined_line="${combined_line/Stream 7\/9:/6Stream ······7••\/9:}"
     combined_line="${combined_line/Stream 8\/9:/7Stream ·······8•\/9:}"
     combined_line="${combined_line/Stream 9\/9:/8Stream ········9\/9:}"
+
+     combined_line="${combined_line/Stream 1\/10:/0Stream 1•••••⊙⊙\/10:}"
+     combined_line="${combined_line/Stream 2\/10:/1Stream 2••••••⊙\/10:}"
+     combined_line="${combined_line/Stream 3\/10:/2Stream 3•••••••\/10:}"
+     combined_line="${combined_line/Stream 4\/10:/3Stream ·4••••••\/10:}"
+     combined_line="${combined_line/Stream 5\/10:/4Stream ··5•••••\/10:}"
+     combined_line="${combined_line/Stream 6\/10:/5Stream ···6••••\/10:}"
+     combined_line="${combined_line/Stream 7\/10:/6Stream ····7•••\/10:}"
+     combined_line="${combined_line/Stream 8\/10:/7Stream ·····8••\/10:}"
+     combined_line="${combined_line/Stream 9\/10:/8Stream ······9•\/10:}"
+    combined_line="${combined_line/Stream 10\/10:/8Stream ······10\/10:}"
+
+     combined_line="${combined_line/Stream 1\/11:/0Stream 1••••⊙⊙⊙\/11:}"
+     combined_line="${combined_line/Stream 2\/11:/1Stream 2•••••⊙⊙\/11:}"
+     combined_line="${combined_line/Stream 3\/11:/2Stream 3••••••⊙\/11:}"
+     combined_line="${combined_line/Stream 4\/11:/3Stream 4•••••••\/11:}"
+     combined_line="${combined_line/Stream 5\/11:/4Stream ·5••••••\/11:}"
+     combined_line="${combined_line/Stream 6\/11:/5Stream ··6•••••\/11:}"
+     combined_line="${combined_line/Stream 7\/11:/6Stream ···7••••\/11:}"
+     combined_line="${combined_line/Stream 8\/11:/7Stream ····8•••\/11:}"
+     combined_line="${combined_line/Stream 9\/11:/8Stream ·····9••\/11:}"
+    combined_line="${combined_line/Stream 10\/11:/8Stream ·····10•\/11:}"
+    combined_line="${combined_line/Stream 11\/11:/8Stream ······11\/11:}"
+
+     combined_line="${combined_line/Stream 1\/12:/0Stream 1•••⊙⊙⊙⊙\/12:}"
+     combined_line="${combined_line/Stream 2\/12:/1Stream 2••••⊙⊙⊙\/12:}"
+     combined_line="${combined_line/Stream 3\/12:/2Stream 3•••••⊙⊙\/12:}"
+     combined_line="${combined_line/Stream 4\/12:/3Stream 4••••••⊙\/12:}"
+     combined_line="${combined_line/Stream 5\/12:/4Stream 5•••••••\/12:}"
+     combined_line="${combined_line/Stream 6\/12:/5Stream ·6••••••\/12:}"
+     combined_line="${combined_line/Stream 7\/12:/6Stream ··7•••••\/12:}"
+     combined_line="${combined_line/Stream 8\/12:/7Stream ···8••••\/12:}"
+     combined_line="${combined_line/Stream 9\/12:/8Stream ····9•••\/12:}"
+    combined_line="${combined_line/Stream 10\/12:/8Stream ····10••\/12:}"
+    combined_line="${combined_line/Stream 11\/12:/8Stream ·····11•\/12:}"
+    combined_line="${combined_line/Stream 12\/12:/8Stream ······12\/12:}"
+
 
     echo "${combined_line}" | sed \
 -e 's/\[\([[:digit:]]:[[:digit:]]\+:[[:digit:]]\+\)/\[ \1/g' \
