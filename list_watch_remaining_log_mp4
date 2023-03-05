@@ -48,7 +48,7 @@ find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
     combined_line="${combined_line/\| /\|@}"
     combined_line="${combined_line/\|MM/\|  }"
     combined_line="${combined_line/\/100 \[/\/100@\[}"
-    combined_line="${combined_line/Second Pass: /9      Second Pass: }"
+    combined_line="${combined_line/Second Pass: /9       Second Pass: }"
 
     combined_line="${combined_line/Stream 1\/1:/8Stream         1\/1:}"
     combined_line="${combined_line/Stream 1\/2:/7Stream        1•\/2:}"
