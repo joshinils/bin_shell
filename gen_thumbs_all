@@ -8,9 +8,13 @@ function kill_sem() {
     done
 }
 
+max_threads=${4:-12}
+cpus=$(grep -c ^processor /proc/cpuinfo)
+cores=$([ $cpus -le "$max_threads" ] && echo "$cpus" || echo "$max_threads")
+
 find * -maxdepth 0 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.MOV" -o -name "*.mov" \) -print0 | while IFS= read -r -d '' file; do
     # echo "file = $file"
-    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) gen_thumbs "\"${file}\"" "${1}" "${2}" "${3}"
+    sem --id $$ --lb -j "${cores}" gen_thumbs "\"${file}\"" "${1}" "${2}" "${3}"
 done
 sem --id $$ --wait
 wait
