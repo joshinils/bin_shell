@@ -173,7 +173,7 @@ def main() -> None:
                 name_length = max(name_length, len(name)-4)
 
         bar_width = width - name_length - 41
-        print(bar_width, width)
+        # print(bar_width, width)
         print(f"{time_str}, {total_percent:4.1f}%, {get_percentage_bar(total_percent, bar_width, stream_current, stream_total)} {title}")
 
 if __name__ == "__main__":
