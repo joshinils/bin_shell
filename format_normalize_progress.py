@@ -6,7 +6,7 @@ import datetime
 import math
 from typing import Tuple
 import os
-
+import colorama
 
 def round_nearest(x, a):
     # https://stackoverflow.com/a/28427814
@@ -18,18 +18,12 @@ def round_nearest(x, a):
     return round(round(x / a) * a, frac_digits)
 
 def fix_time_format(input: str) -> str:
-    ret = "00:00:00"
-    try:
-        if input == "?":
-            raise ValueError()
-        input = "00000" + input
-        input = list(input[-8:])
-        input[-6] = ":"
-        ret = "".join(input)
-    except:
-        pass
+    if input == "?":
+        return "23:59:59"
 
-    return ret
+    input = list(("00000" + input)[-8:])
+    input[-6] = ":"
+    return "".join(input)
 
 
 def calc_time_done(time_done: datetime.datetime, iteration_time: float) -> Tuple[datetime.datetime, float]:
@@ -60,8 +54,9 @@ def get_percentage_bar(percentage: float, width_chars, current_stream=1, total_s
     light = "░"
     medium = "▒"
     dark = "▓"
+
     second_half_width = math.ceil(width_chars/2)
-    stream_width = math.ceil(second_half_width / total_stream -1)
+    stream_width = math.floor(second_half_width / total_stream)
 
     streams_done_count = current_stream -1
     streams_todo_count = total_stream - current_stream
@@ -90,7 +85,10 @@ def get_percentage_bar(percentage: float, width_chars, current_stream=1, total_s
         if total_stream > 1:
             offset_for50 = -1
         first_half = get_small_bar(100, second_half_width + offset_for50)
-    return f"|{first_half}{separator}{second_half}|"
+    inner = f"{first_half}{separator}{second_half}"
+    while len(inner) < width_chars:
+        inner = "█" + inner
+    return f"{inner}"
 
 def main() -> None:
     # hundred=200
@@ -115,35 +113,46 @@ def main() -> None:
     regex = re.compile(reg_str)
 
     for line in sys.stdin:
-        # print(line)
         matches = regex.findall(line)
-        stream_or_passes, stream_current, stream_total, percent_done, time_elapsed, time_remaining, iteration_time, it_s_it, title, *_ = matches[0]
+        stream_or_passes: str
+        stream_current_str:str
+        stream_total_str: str
+        percent_done_str: str
+        time_elapsed_str: str
+        time_remaining_str: str
+        iteration_time_str: str
+        it_s_it: str
+        title: str
+
+        stream_or_passes, stream_current_str, stream_total_str, percent_done_str, time_elapsed_str, time_remaining_str, iteration_time_str, it_s_it, title, *_ = matches[0]
 
         try:
-            iteration_time = float(iteration_time)
+            iteration_time = float(iteration_time_str)
         except:
-            iteration_time = 1
+            iteration_time = 100.0
 
         try:
-            percent_done = float(percent_done)
+            percent_done = float(percent_done_str)
         except:
-            percent_done = 1
+            percent_done = 1.0
 
         try:
-            stream_current = int(stream_current)
-            stream_total = int(stream_total)
+            stream_current = int(stream_current_str)
+            stream_total = int(stream_total_str)
         except:
             stream_current = 1
-            stream_total = 1
+            stream_total = 100
 
         total_percent = percent_done/2 + 50
-        time_elapsed = fix_time_format(time_elapsed)
-        time_remaining = fix_time_format(time_remaining)
+        time_elapsed = fix_time_format(time_elapsed_str)
+        time_remaining = fix_time_format(time_remaining_str)
 
         remaining = datetime.datetime.strptime(time_remaining, '%H:%M:%S')
         remaining = datetime.timedelta(0, hours=remaining.hour, minutes=remaining.minute, seconds=remaining.second)
 
+        stream_num = ""
         if stream_or_passes == "Stream ":
+            stream_num = f"{stream_current:2}/{stream_total:2}"
             elapsed_t = datetime.datetime.strptime(time_elapsed, '%H:%M:%S')
             elapsed_t = datetime.timedelta(0, hours=elapsed_t.hour, minutes=elapsed_t.minute, seconds=elapsed_t.second)
             time_per_stream = elapsed_t + remaining
@@ -170,11 +179,55 @@ def main() -> None:
         name_length = 0
         for name in filenames:
             if name.endswith(".log"):
-                name_length = max(name_length, len(name)-4)
+                name_length = max(name_length, len(name) - 4)
 
-        bar_width = width - name_length - 41
-        # print(bar_width, width)
-        print(f"{time_str}, {total_percent:4.1f}%, {get_percentage_bar(total_percent, bar_width, stream_current, stream_total)} {title}")
+        bar_width = width - name_length - 37  #TODO: CHECK IF RIGHT?
+
+        percentage_bar = get_percentage_bar(total_percent, bar_width, stream_current, stream_total)
+        info_one = f"{time_str}, {total_percent:5.1f}%"
+        info_two = f"{title.rjust(width - name_length - bar_width + 7)}"
+        extra_info = f"{stream_num} {time_elapsed_str.rjust(8)} < {time_remaining_str.rjust(8)}{str(iteration_time).rjust(8)} {it_s_it} "
+
+        # if total_percent < 50:
+        #     extra_info = extra_info[::-1]
+        #     percentage_bar = percentage_bar[::-1]
+
+        if len(info_one) < width:
+            info = info_one
+            percentage_bar = get_percentage_bar(total_percent, width, stream_current, stream_total)
+            if len(info_one) + len(info_two) < width:
+                if len(info_one) + len(info_two) + len(extra_info) >= width:
+                    extra_info = ""
+
+                normal_info = info_one.ljust(width - len(info_two) -len(extra_info)) + extra_info + info_two
+                info = normal_info
+
+        if len(info) <= len(percentage_bar):
+            percentage_bar = list(percentage_bar)
+
+            for i, (p, e) in enumerate(zip(percentage_bar[::-1], info[::-1])):
+                if e == " ":
+                    continue
+                elif p == " ":
+                    percentage_bar[len(percentage_bar)-i-1] = e  # white black
+                elif p == "▏":  # 1
+                    percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.CYAN  + colorama.Back.BLACK + e + colorama.Style.RESET_ALL
+                elif p == "▎" or p == "▍":  # 2 or 3
+                    percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.CYAN  + colorama.Back.BLUE  + e + colorama.Style.RESET_ALL
+                elif p == "▌":  # 4
+                    percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.CYAN  + colorama.Back.MAGENTA + e + colorama.Style.RESET_ALL
+                elif p == "▋" or p == "▊":  # 5 or 6
+                    percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLUE  + colorama.Back.CYAN  + e + colorama.Style.RESET_ALL
+                elif p == "▉":  # 7
+                    percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLUE  + colorama.Back.WHITE + e + colorama.Style.RESET_ALL
+                elif p == "█":
+                    percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLACK + colorama.Back.WHITE + e + colorama.Style.RESET_ALL
+                else:
+                    percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLACK + colorama.Back.YELLOW + e + colorama.Style.RESET_ALL
+
+            percentage_bar = "".join(percentage_bar)
+
+        print(f"{percentage_bar}")
 
 if __name__ == "__main__":
     main()
