@@ -185,7 +185,7 @@ def main() -> None:
 
         percentage_bar = get_percentage_bar(total_percent, bar_width, stream_current, stream_total)
         info_one = f"{time_str}, {total_percent:5.1f}%"
-        info_two = f"{title.rjust(width - name_length - bar_width + 7)}"
+        info_two = f"{title.rjust(name_length)}"
         extra_info = f"{stream_num} {time_elapsed_str.rjust(8)} < {time_remaining_str.rjust(8)}{str(iteration_time).rjust(8)} {it_s_it} "
 
         # if total_percent < 50:
