@@ -160,16 +160,16 @@ def main() -> None:
 
             total_percent = ((stream_current - 1) * 100 + percent_done) / stream_total / 2
 
-            time_done = datetime.datetime.now() + remaining + time_per_stream * streams_left + stream_total * time_per_stream
+            datetime_done = datetime.datetime.now() + remaining + time_per_stream * streams_left + stream_total * time_per_stream
         elif stream_or_passes == "Second Pass":
-            time_done = datetime.datetime.now() + remaining
+            datetime_done = datetime.datetime.now() + remaining
 
-        time_done, delta_nearest = calc_time_done(time_done, iteration_time)
-        time_done = f"{time_done}.00"[:22]
+        datetime_done, delta_nearest = calc_time_done(datetime_done, iteration_time)
+        time_done_str = f"{datetime_done}"[:19]
         if it_s_it == "it/s":
-            time_str = f"{time_done}        "
+            time_str = f"{time_done_str}" + " " * 7
         else:
-            time_str = f"{time_done} {delta_nearest:+7.2f}"
+            time_str = f"{time_done_str} {delta_nearest:+7.2f}"
 
         import shutil
         width, height = shutil.get_terminal_size((80, 20))
@@ -184,9 +184,12 @@ def main() -> None:
         bar_width = width - name_length - 37  #TODO: CHECK IF RIGHT?
 
         percentage_bar = get_percentage_bar(total_percent, bar_width, stream_current, stream_total)
-        info_one = f"{time_str}, {total_percent:5.1f}%"
+        time_left = datetime_done - datetime.datetime.now()
+        seconds_left = max(0, min(time_left.seconds + time_left.days * 60 * 60 * 24, 99999))
+        info_one = f"{seconds_left:05g} {time_str}, {total_percent:5.1f}%"
+        info_one = info_one.replace(datetime.datetime.now().strftime('%Y-%m-%d'), " " * 10)
         info_two = f"{title.rjust(name_length)}"
-        extra_info = f"{stream_num} {time_elapsed_str.rjust(8)} < {time_remaining_str.rjust(8)}{str(iteration_time).rjust(8)} {it_s_it} "
+        extra_info = f"{stream_num} {time_elapsed_str.rjust(8)} < {time_remaining_str.rjust(8)}{iteration_time:8.2f} {it_s_it} "
 
         # if total_percent < 50:
         #     extra_info = extra_info[::-1]
@@ -210,6 +213,8 @@ def main() -> None:
                     continue
                 elif p == " ":
                     percentage_bar[len(percentage_bar)-i-1] = e  # white black
+                elif p == "█" or len(info)-i < 5:
+                    percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLACK + colorama.Back.WHITE + e + colorama.Style.RESET_ALL
                 elif p == "▏":  # 1
                     percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.CYAN  + colorama.Back.BLACK + e + colorama.Style.RESET_ALL
                 elif p == "▎" or p == "▍":  # 2 or 3
@@ -220,8 +225,6 @@ def main() -> None:
                     percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLUE  + colorama.Back.CYAN  + e + colorama.Style.RESET_ALL
                 elif p == "▉":  # 7
                     percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLUE  + colorama.Back.WHITE + e + colorama.Style.RESET_ALL
-                elif p == "█":
-                    percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLACK + colorama.Back.WHITE + e + colorama.Style.RESET_ALL
                 else:
                     percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLACK + colorama.Back.YELLOW + e + colorama.Style.RESET_ALL
 
