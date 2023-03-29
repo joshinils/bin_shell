@@ -167,7 +167,7 @@ def main() -> None:
         datetime_done, delta_nearest = calc_time_done(datetime_done, iteration_time)
         time_done_str = f"{datetime_done}"[:19]
         if it_s_it == "it/s":
-            time_str = f"{time_done_str}" + " " * 7
+            time_str = f"{time_done_str} " + " " * 7
         else:
             time_str = f"{time_done_str} {delta_nearest:+7.2f}"
 
@@ -213,7 +213,7 @@ def main() -> None:
                     continue
                 elif p == " ":
                     percentage_bar[len(percentage_bar)-i-1] = e  # white black
-                elif p == "█" or len(info)-i < 5:
+                elif p == "█" or len(info)-i < 6:
                     percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLACK + colorama.Back.WHITE + e + colorama.Style.RESET_ALL
                 elif p == "▏":  # 1
                     percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.CYAN  + colorama.Back.BLACK + e + colorama.Style.RESET_ALL
