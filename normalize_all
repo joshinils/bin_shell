@@ -26,7 +26,7 @@ while [ "$loop" = "true" ]; do
         if [ -s "$fname".log ] ; then
             continue
         fi
-        parallel --semaphore --id $$ --lb -j "${threads}" "nice -n 20 normalize \"${fname}\" >> \"${fname}.log\" 2>&1 && mkdir normalized_done -p && mv -n \"${fname}\" normalized_done && rm -f \"${fname}.log\""
+        parallel --semaphore --id $$ --lb -j "${threads}" "nice -n 20 normalize \"${fname}\""
         break
     done
     sleep 4
