@@ -213,7 +213,7 @@ def main() -> None:
                     continue
                 elif p == " ":
                     percentage_bar[len(percentage_bar)-i-1] = e  # white black
-                elif p == "█" or len(info)-i < 6:
+                elif p == "█" or len(info)-i < 10:
                     percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLACK + colorama.Back.WHITE + e + colorama.Style.RESET_ALL
                 elif p == "▏":  # 1
                     percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.CYAN  + colorama.Back.BLACK + e + colorama.Style.RESET_ALL
