@@ -45,7 +45,7 @@ find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
     echo "$tail_log ${fname}"|format_normalize_progress.py >> $var
 done
 
-cat $var | sort
+cat $var | sed 'h;s/\x1b[[0-9;]*m//g;G;s/\n/\t/' | sort | cut -f2-
 rm -f $var
 
 echo ""

@@ -186,7 +186,7 @@ def main() -> None:
         percentage_bar = get_percentage_bar(total_percent, bar_width, stream_current, stream_total)
         time_left = datetime_done - datetime.datetime.now()
         seconds_left = max(0, min(time_left.seconds + time_left.days * 60 * 60 * 24, 99999))
-        info_one = f"{seconds_left:05g} {100-total_percent:05.1f}% left {time_str}"
+        info_one = f"{seconds_left:05g} {time_str} {total_percent:5.1f}%"
         info_one = info_one.replace(datetime.datetime.now().strftime('%Y-%m-%d'), " " * 10)
         info_two = f"{title.rjust(name_length)}"
         extra_info = f"{stream_num} {time_elapsed_str.rjust(8)} < {time_remaining_str.rjust(8)}{iteration_time:8.2f} {it_s_it} "
@@ -213,7 +213,7 @@ def main() -> None:
                     continue
                 elif p == " ":
                     percentage_bar[len(percentage_bar)-i-1] = e  # white black
-                elif p == "█" or len(info)-i < 10:
+                elif p == "█":
                     percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.BLACK + colorama.Back.WHITE + e + colorama.Style.RESET_ALL
                 elif p == "▏":  # 1
                     percentage_bar[len(percentage_bar)-i-1] = colorama.Fore.CYAN  + colorama.Back.BLACK + e + colorama.Style.RESET_ALL
