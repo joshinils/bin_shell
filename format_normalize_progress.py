@@ -185,7 +185,7 @@ def main() -> None:
 
         percentage_bar = get_percentage_bar(total_percent, bar_width, stream_current, stream_total)
         time_left = datetime_done - datetime.datetime.now()
-        seconds_left = max(0, min(time_left.seconds + time_left.days * 60 * 60 * 24, 99999))
+        seconds_left = max(0, min(round_nearest(time_left.seconds + time_left.days * 60 * 60 * 24, iteration_time), 99999))
         info_one = f"{seconds_left:05g} {time_str} {total_percent:5.1f}%"
         info_one = info_one.replace(datetime.datetime.now().strftime('%Y-%m-%d'), " " * 10)
         info_two = f"{title.rjust(name_length)}"
