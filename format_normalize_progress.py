@@ -17,14 +17,18 @@ def round_nearest(x, a):
             break
     return round(round(x / a) * a, frac_digits)
 
-def fix_time_format(input: str) -> str:
+def fix_time_format(input: str) -> datetime.timedelta:
     if input == "?":
-        return "23:59:59"
+        return datetime.timedelta(days=1, seconds=-1)
 
-    input = list(("00000" + input)[-8:])
-    input[-6] = ":"
-    return "".join(input)
+    parts = input.split(":")
 
+    r_parts = list(reversed(parts)) + ["00"]+ ["00"]
+    seconds, minutes, hours, days, *_ = r_parts
+
+    delta = datetime.timedelta(days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds))
+
+    return delta
 
 def calc_time_done(time_done: datetime.datetime, iteration_time: float) -> Tuple[datetime.datetime, float]:
     time_done = time_done.timestamp()
@@ -100,6 +104,23 @@ def trunc_filename(filename: str) -> str:
     return filename
 
 
+def format_timedelta(delta: datetime.timedelta) -> str:
+    seconds = delta.seconds
+
+    minutes = seconds // 60
+    seconds -= minutes * 60
+
+    hours = minutes // 60
+    minutes -= hours * 60
+
+    if delta.days > 0:
+        return f"{delta.days:2}:{hours:02}:{minutes:02}:{seconds:02}"
+    elif hours > 0:
+        return f"   {hours: >2}:{minutes:02}:{seconds:02}"
+    elif minutes > 0:
+        return f"      {minutes: >02}:{seconds:02}"
+    return f"         {seconds: >2}"
+
 def main() -> None:
     # hundred=200
     # for i in range(101):
@@ -159,29 +180,26 @@ def main() -> None:
         time_elapsed = fix_time_format(time_elapsed_str)
         time_remaining = fix_time_format(time_remaining_str)
 
-        remaining = datetime.datetime.strptime(time_remaining, '%H:%M:%S')
-        remaining = datetime.timedelta(0, hours=remaining.hour, minutes=remaining.minute, seconds=remaining.second)
-
         stream_num = ""
         if stream_or_passes == "Stream ":
             stream_num = f"{stream_current:2}/{stream_total:2}"
-            elapsed_t = datetime.datetime.strptime(time_elapsed, '%H:%M:%S')
-            elapsed_t = datetime.timedelta(0, hours=elapsed_t.hour, minutes=elapsed_t.minute, seconds=elapsed_t.second)
-            time_per_stream = elapsed_t + remaining
+            time_per_stream = time_elapsed + time_remaining
             streams_left = stream_total - stream_current
 
             total_percent = ((stream_current - 1) * 100 + percent_done) / stream_total / 2
 
-            datetime_done = datetime.datetime.now() + remaining + time_per_stream * streams_left + stream_total * time_per_stream
+            total_time_left = time_remaining + time_per_stream * streams_left + stream_total * time_per_stream
         elif stream_or_passes == "Second Pass":
-            datetime_done = datetime.datetime.now() + remaining
+            total_time_left = time_remaining
+
+        datetime_done = datetime.datetime.now() + total_time_left
 
         datetime_done, delta_nearest = calc_time_done(datetime_done, iteration_time)
         time_done_str = f"{datetime_done}"[:19]
         if it_s_it == "it/s":
-            time_str = f"{time_done_str} " + " " * 7
+            time_str = f"{time_done_str} " + " " * 8
         else:
-            time_str = f"{time_done_str} {delta_nearest:+7.2f}"
+            time_str = f"{time_done_str} {delta_nearest:+8.2f}"
 
         import shutil
         width, height = shutil.get_terminal_size((80, 20))
@@ -197,7 +215,7 @@ def main() -> None:
         percentage_bar = get_percentage_bar(total_percent, bar_width, stream_current, stream_total)
         time_left = datetime_done - datetime.datetime.now()
         seconds_left = max(0, min(round_nearest(time_left.seconds + time_left.days * 60 * 60 * 24, iteration_time), 99999))
-        info_one = f"{seconds_left:05.0f} {time_str} {total_percent:5.1f}%"
+        info_one = f"{seconds_left:05.0f} {time_str} {format_timedelta(total_time_left)} {total_percent:5.1f}%"
         info_one = info_one.replace(datetime.datetime.now().strftime('%Y-%m-%d'), " " * 10)
         info_two = f"{title.rjust(name_length)}"
         extra_info = f"{stream_num} {time_elapsed_str.rjust(8)} < {time_remaining_str.rjust(8)}{iteration_time:8.2f} {it_s_it} "
