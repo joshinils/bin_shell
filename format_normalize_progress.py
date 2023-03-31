@@ -90,6 +90,16 @@ def get_percentage_bar(percentage: float, width_chars, current_stream=1, total_s
         inner = "█" + inner
     return f"{inner}"
 
+
+def trunc_filename(filename: str) -> str:
+    if filename.endswith(".log"):
+        filename = filename[:-4]
+    if filename.endswith(".mp4"):
+        filename = filename[:-4]
+
+    return filename
+
+
 def main() -> None:
     # hundred=200
     # for i in range(101):
@@ -143,6 +153,8 @@ def main() -> None:
             stream_current = 1
             stream_total = 100
 
+        title = trunc_filename(title)
+
         total_percent = percent_done/2 + 50
         time_elapsed = fix_time_format(time_elapsed_str)
         time_remaining = fix_time_format(time_remaining_str)
@@ -178,8 +190,7 @@ def main() -> None:
 
         name_length = 0
         for name in filenames:
-            if name.endswith(".log"):
-                name_length = max(name_length, len(name) - 4)
+            name_length = max(name_length, len(trunc_filename(name)))
 
         bar_width = width - name_length - 37  #TODO: CHECK IF RIGHT?
 
