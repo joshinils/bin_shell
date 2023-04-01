@@ -114,7 +114,7 @@ def format_timedelta(delta: datetime.timedelta) -> str:
     minutes -= hours * 60
 
     if delta.days > 0:
-        return f"{delta.days:2}:{hours:02}:{minutes:02}:{seconds:02}"
+        return f"{delta.days: >2}:{hours:02}:{minutes:02}:{seconds:02}"
     elif hours > 0:
         return f"   {hours: >2}:{minutes:02}:{seconds:02}"
     elif minutes > 0:
@@ -215,7 +215,8 @@ def main() -> None:
         percentage_bar = get_percentage_bar(total_percent, bar_width, stream_current, stream_total)
         time_left = datetime_done - datetime.datetime.now()
         seconds_left = max(0, min(round_nearest(time_left.seconds + time_left.days * 60 * 60 * 24, iteration_time), 99999))
-        info_one = f"{seconds_left:05.0f} {time_str} {format_timedelta(total_time_left)} {total_percent:5.1f}%"
+        #info_one = f"{seconds_left:05.0f} {time_str} {format_timedelta(total_time_left)} {total_percent:5.1f}%"
+        info_one = f"{format_timedelta(total_time_left)} {time_str} {total_percent:5.1f}%"
         info_one = info_one.replace(datetime.datetime.now().strftime('%Y-%m-%d'), " " * 10)
         info_two = f"{title.rjust(name_length)}"
         extra_info = f"{stream_num} {time_elapsed_str.rjust(8)} < {time_remaining_str.rjust(8)}{iteration_time:8.2f} {it_s_it} "
