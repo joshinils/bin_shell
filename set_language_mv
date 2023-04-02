@@ -10,6 +10,21 @@ elif [ "$#" -le 4 ]; then
     ffmpeg_set_language "${1}" "${2}" "${3}" "${4}"
 elif [ "$#" -le 5 ]; then
     ffmpeg_set_language "${1}" "${2}" "${3}" "${4}" "${5}"
+elif [ "$#" -le 6 ]; then
+    ffmpeg_set_language "${1}" "${2}" "${3}" "${4}" "${5}" "${6}"
+elif [ "$#" -le 7 ]; then
+    ffmpeg_set_language "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}"
+elif [ "$#" -le 8 ]; then
+    ffmpeg_set_language "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}"
+elif [ "$#" -le 9 ]; then
+    ffmpeg_set_language "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}"
+elif [ "$#" -le 10 ]; then
+    ffmpeg_set_language "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}"
+elif [ "$#" -le 11 ]; then
+    ffmpeg_set_language "${1}" "${2}" "${3}" "${4}" "${5}" "${6}" "${7}" "${8}" "${9}" "${10}" "${11}"
+else
+    echo "too many arguments"
+    exit
 fi
 
 wait
