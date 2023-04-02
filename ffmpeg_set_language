@@ -22,6 +22,18 @@ elif [ "$#" -le 4 ]; then
     ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" -metadata:s:a:2 language="${4}" "${out_name}"
 elif [ "$#" -le 5 ]; then
     ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" -metadata:s:a:2 language="${4}" -metadata:s:a:3 language="${5}" "${out_name}"
+elif [ "$#" -le 6 ]; then
+    ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" -metadata:s:a:2 language="${4}" -metadata:s:a:3 language="${5}" -metadata:s:a:4 language="${6}" "${out_name}"
+elif [ "$#" -le 7 ]; then
+    ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" -metadata:s:a:2 language="${4}" -metadata:s:a:3 language="${5}" -metadata:s:a:4 language="${6}" -metadata:s:a:5 language="${7}" "${out_name}"
+elif [ "$#" -le 8 ]; then
+    ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" -metadata:s:a:2 language="${4}" -metadata:s:a:3 language="${5}" -metadata:s:a:4 language="${6}" -metadata:s:a:5 language="${7}" -metadata:s:a:6 language="${8}" "${out_name}"
+elif [ "$#" -le 9 ]; then
+    ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" -metadata:s:a:2 language="${4}" -metadata:s:a:3 language="${5}" -metadata:s:a:4 language="${6}" -metadata:s:a:5 language="${7}" -metadata:s:a:6 language="${8}" -metadata:s:a:7 language="${9}" "${out_name}"
+elif [ "$#" -le 10 ]; then
+    ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" -metadata:s:a:2 language="${4}" -metadata:s:a:3 language="${5}" -metadata:s:a:4 language="${6}" -metadata:s:a:5 language="${7}" -metadata:s:a:6 language="${8}" -metadata:s:a:7 language="${9}" -metadata:s:a:8 language="${10}" "${out_name}"
+elif [ "$#" -le 11 ]; then
+    ffmpeg -i "$in_name" -map 0 -c copy -metadata:s:a:0 language="${2}" -metadata:s:a:1 language="${3}" -metadata:s:a:2 language="${4}" -metadata:s:a:3 language="${5}" -metadata:s:a:4 language="${6}" -metadata:s:a:5 language="${7}" -metadata:s:a:6 language="${8}" -metadata:s:a:7 language="${9}" -metadata:s:a:8 language="${10}" -metadata:s:a:9 language="${11}" "${out_name}"
 fi
 
 # potentially remove COLON-variant
