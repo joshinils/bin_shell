@@ -71,11 +71,13 @@ def main():
         to_keep.append(name)
 
     size_name = []
-    size_name.sort(key=lambda x: x[0], reverse=True)
+    for name in to_keep:
+        size_name.append((os.path.getsize(name), name))
 
+    size_name.sort(key=lambda x: x[0], reverse=True)
     print("Waiting:")
-    for size, name, channels_dict, num_channels, duration in size_name:
-        print(f"{make_size_str(size)}, {str(channels_dict): >12}={num_channels: >2g} {name}")
+    for size, name in size_name:
+        print(f"{make_size_str(size)}, {name}")
 
 if __name__ == "__main__":
     main()
