@@ -1,26 +1,20 @@
 #!/usr/bin/env bash
 
-
-for dir in $(find * -maxdepth 0 -type d); do # Not recommended, will break on whitespace
+find * -maxdepth 0 -type d | while read dir; do
     # if folder empty, dont delete at end, nor loop through it
-    if [ -z "$(ls -A $dir)" ]; then
+    if [ -z "$(ls -A "${dir}")" ]; then
         echo "Empty"
         continue
     fi
 
     (
         cd "$dir"
-        for sub_d in $(find * -maxdepth 0 -type d); do # Not recommended, will break on whitespace
+        find * -maxdepth 0 -type d | while read sub_d; do
             echo "$dir"_"$sub_d"
-            mv "$sub_d" ../"$dir"_"$sub_d"
+            mv -n "$sub_d" ../"$dir"_"$sub_d"
         done
     )
 
     # delete folder if now empty
     rmdir "$dir" --ignore-fail-on-non-empty
 done
-
-Help()
-{
-    echo "this is help?"
-}
