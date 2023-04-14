@@ -100,6 +100,8 @@ def trunc_filename(filename: str) -> str:
         filename = filename[:-4]
     if filename.endswith(".mp4"):
         filename = filename[:-4]
+    if filename.endswith(".mkv"):
+        filename = filename[:-4]
 
     return filename
 
