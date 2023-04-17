@@ -210,6 +210,8 @@ def main() -> None:
 
         name_length = 0
         for name in filenames:
+            if not name.endswith(".log"):
+                continue
             name_length = max(name_length, len(trunc_filename(name)))
 
         bar_width = width - name_length - 37  #TODO: CHECK IF RIGHT?
