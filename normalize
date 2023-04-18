@@ -8,7 +8,7 @@ sample_rate=$(ffprobe -v error -select_streams a -of default=noprint_wrappers=1:
 mkdir normalized -p
 
 if [ $extension = "ogg" ] || [ $extension = "m4a" ] || [ $extension = "opus" ] || [ $extension = "webm" ]; then
-    ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension ogg -t -2 -nt peak --keep-loudness-range-target -c:a libvorbis "${1}" -vn >> "${1}".log 2>&1
+    ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension ogg -t -2 -nt peak --keep-loudness-range-target -c:a libvorbis "./${1}" -vn >> "${1}".log 2>&1
     mkdir normalized_done -p && mv -n "${1}" normalized_done && rm -f "${1}.log"
     mv -n "${1/.ogg/.png}" normalized > /dev/null 2>&1
     mv -n "${1/.m4a/.png}" normalized > /dev/null 2>&1
@@ -16,7 +16,7 @@ if [ $extension = "ogg" ] || [ $extension = "m4a" ] || [ $extension = "opus" ] |
     mv -n "${1/.webm/.png}" normalized > /dev/null 2>&1
     echo "done running: ffmpeg-normalize -pr -f -ar  \"${sample_rate} \" --extension ogg -t -2 -nt peak --keep-loudness-range-target -c:a libvorbis  \"${1} \" -vn >>  \"${1} \".log 2>&1"
 else
-    ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension $extension -c:a "${codec}" "${1}" -e "-strict -2" >> "${1}".log 2>&1
+    ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension $extension -c:a "${codec}" "./${1}" -e "-strict -2" >> "${1}".log 2>&1
     mkdir normalized_done -p && mv -n "${1}" normalized_done && rm -f "${1}.log"
     mv -n "${1/.mp4/.png}" normalized > /dev/null 2>&1
     mv -n "${1/.mkv/.png}" normalized > /dev/null 2>&1
