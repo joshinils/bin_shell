@@ -182,6 +182,7 @@ def main() -> None:
         time_elapsed = fix_time_format(time_elapsed_str)
         time_remaining = fix_time_format(time_remaining_str)
 
+
         stream_num = ""
         if stream_or_passes == "Stream ":
             stream_num = f"{stream_current:2}/{stream_total:2}"
@@ -191,8 +192,12 @@ def main() -> None:
             total_percent = ((stream_current - 1) * 100 + percent_done) / stream_total / 2
 
             total_time_left = time_remaining + time_per_stream * streams_left + stream_total * time_per_stream
+            if percent_done <= 2:
+                total_time_left += datetime.timedelta(hours=stream_total)
         elif stream_or_passes == "Second Pass":
             total_time_left = time_remaining
+            if percent_done <= 2:
+                total_time_left += datetime.timedelta(hours=1)
 
         datetime_done = datetime.datetime.now() + total_time_left
 
@@ -220,7 +225,12 @@ def main() -> None:
         time_left = datetime_done - datetime.datetime.now()
         seconds_left = max(0, min(round_nearest(time_left.seconds + time_left.days * 60 * 60 * 24, iteration_time), 99999))
         #info_one = f"{seconds_left:05.0f} {time_str} {format_timedelta(total_time_left)} {total_percent:5.1f}%"
-        info_one = f"{format_timedelta(total_time_left)} {time_str} {total_percent:5.1f}%"
+
+        percent_small = ""
+        if percent_done <= 9:
+            percent_small = f" {percent_done}"
+
+        info_one = f"{format_timedelta(total_time_left)} {time_str} {total_percent:5.1f}%{percent_small}"
         info_one = info_one.replace(datetime.datetime.now().strftime('%Y-%m-%d'), " " * 10)
         info_two = f"{title.rjust(name_length)}"
         extra_info = f"{stream_num} {time_elapsed_str.rjust(8)} < {time_remaining_str.rjust(8)}{iteration_time:8.2f} {it_s_it} "
