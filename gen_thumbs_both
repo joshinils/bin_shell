@@ -9,9 +9,10 @@ function kill_sem() {
 }
 
 find * -maxdepth 0 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.MOV" -o -name "*.mov" \) -print0 |shuf --zero-terminated| while IFS= read -r -d '' file; do
-    # echo "file = $file"
-    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) gen_thumbs "\"${file}\"" 4 "-n"
-    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) gen_thumbs "\"${file}\"" 11 "-n" backdrop
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) nice -n 20 gen_thumbs "\"${file}\"" 4 "-n"
+done
+find * -maxdepth 0 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.MOV" -o -name "*.mov" \) -print0 |shuf --zero-terminated| while IFS= read -r -d '' file; do
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) nice -n 20 gen_thumbs "\"${file}\"" 11 "-n" backdrop
 done
 sem --id $$ --wait
 wait
