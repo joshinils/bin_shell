@@ -22,7 +22,7 @@ while [ "$loop" = "true" ]; do
         break
     fi
 
-    find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" -o -name "*.webm" \) | while read fname; do
+    find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" -o -name "*.webm" \) -print0 | shuf --zero-terminated | while IFS= read -r -d '' fname; do
         if [ -s "$fname".log ] ; then
             continue
         fi
