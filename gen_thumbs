@@ -21,5 +21,5 @@ n_th_frame=$(echo \($frames - 240\) / \($grid \* $grid\) | bc)
 # echo n_th_frame:$n_th_frame
 
 # ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=320:180,tile=${grid}x${grid}" "${out_name// /_}" -y </dev/null
-ncie -n 20 ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "./${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=iw*min(1\, 2560/(iw*$grid)):ih*min(1\, 2560/(iw*$grid))/sar,tile=${grid}x${grid}" "./${out_name}" "${yes_no}" </dev/null
+nice -n 20 ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "./${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=iw*min(1\, 2560/(iw*$grid)):ih*min(1\, 2560/(iw*$grid))/sar,tile=${grid}x${grid}" "./${out_name}" "${yes_no}" </dev/null
 # ffmpeg                                   -ss     4212 -i "${1}"           -vf                                    scale=iw*sar    :  ih -frames:v 1 -q:v 2 out.jpg
