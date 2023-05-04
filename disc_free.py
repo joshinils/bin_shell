@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import shutil
-import os
 import inspect
+import os
+import shutil
 
 
 def find_mount_point(path):
@@ -39,7 +39,6 @@ def make_size_str(size_B: int) -> str:
     if size_B == 0:
         return "0B"
 
-
     name_size_binary = {
         #  "B":   2 ** 00,
         #      since disc usage is at a minimum 4Kib, even for a one byte file,
@@ -54,17 +53,17 @@ def make_size_str(size_B: int) -> str:
         "YiB": 2 ** 80,
     }
 
-    name_size_decimal = {
-        "B":  10 ** 00,
-        "KB": 10 **  3,
-        "MB": 10 **  6,
-        "GB": 10 **  9,
-        "TB": 10 ** 12,
-        "PB": 10 ** 15,
-        "EB": 10 ** 18,
-        "ZB": 10 ** 21,
-        "YB": 10 ** 24,
-    }
+    # name_size_decimal = {
+    #     "B":  10 ** 00,  # noqa: E241
+    #     "KB": 10 **  3,  # noqa: E222
+    #     "MB": 10 **  6,  # noqa: E222
+    #     "GB": 10 **  9,  # noqa: E222
+    #     "TB": 10 ** 12,
+    #     "PB": 10 ** 15,
+    #     "EB": 10 ** 18,
+    #     "ZB": 10 ** 21,
+    #     "YB": 10 ** 24,
+    # }
 
     name_size = name_size_binary
 

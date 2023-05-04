@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-from random import shuffle
-from ortools.linear_solver import pywraplp
-import sys
 import os
+import sys
 from pathlib import Path
+from random import shuffle
+
+from ortools.linear_solver import pywraplp
 
 
 def create_data_model(folder: str, bin_capacity: float):

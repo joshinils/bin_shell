@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 
 extension_keep: Tuple[str] = (
     "ogg",
@@ -32,10 +32,10 @@ def make_size_str(size_B: int) -> str:
     }
 
     name_size_decimal: Dict[str, int] = {
-        "B":  10 ** 00,
-        "KB": 10 **  3,
-        "MB": 10 **  6,
-        "GB": 10 **  9,
+        "B":  10 ** 00,  # noqa: E241
+        "KB": 10 **  3,  # noqa: E222
+        "MB": 10 **  6,  # noqa: E222
+        "GB": 10 **  9,  # noqa: E222
         "TB": 10 ** 12,
         "PB": 10 ** 15,
         "EB": 10 ** 18,
@@ -50,6 +50,7 @@ def make_size_str(size_B: int) -> str:
         if size > size_B:
             continue
         return f"{size_B / size:7.2f} {name}"
+
 
 def main():
     filenames = next(os.walk(os.getcwd()), (None, None, []))[2]  # [] if no file
@@ -78,6 +79,7 @@ def main():
     print("Waiting:")
     for size, name in size_name:
         print(f"{make_size_str(size)}, {name}")
+
 
 if __name__ == "__main__":
     main()

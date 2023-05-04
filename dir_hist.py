@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-import sys
-import os
 import math
-import numpy as np
+import os
+import sys
 import typing
+
+import numpy as np
 
 # sizes in [B]ytes
 
 # TODO: fix amount of buckets
 # TODO: print heder for files and dirs, not the trailing two chars in 0.f and 0.d
+
 
 def sum_dir_size(directory: str) -> int:
     size_sum = 0
@@ -19,12 +21,14 @@ def sum_dir_size(directory: str) -> int:
 
     return size_sum
 
+
 # round up, so first digit is one higher
 def round_first_digit_up(num: int) -> int:
     if num == 0:
         return 1
     prev_pow_10 = 10 ** math.floor(math.log10(num))
     return math.ceil(num / prev_pow_10) * prev_pow_10
+
 
 # round first digit, rest 0
 def round_first_digit(num: int) -> int:
@@ -41,6 +45,7 @@ def humanize_filesize(size_in_bytes) -> str:
         size_in_bytes /= 1000
     return str(size_in_bytes) + "B"
 
+
 def get_buckets(name_size_dict: typing.Dict) -> typing.List[int]:
     max_val = max(name_size_dict.values())
     min_val = min(name_size_dict.values())
@@ -55,6 +60,7 @@ def get_buckets(name_size_dict: typing.Dict) -> typing.List[int]:
         buckets.append(round_first_digit(num))
 
     return buckets
+
 
 def get_bucketizes_sizes(name_size_dict: typing.Dict, buckets: typing.List[int]) -> typing.List[typing.Tuple[str, str]]:
     bucketized_sizes = {}
@@ -76,15 +82,16 @@ def get_bucketizes_sizes(name_size_dict: typing.Dict, buckets: typing.List[int])
     for size, amount in bucketized_sizes.items():
         printable_arr_sizes.append(str(humanize_filesize(size)))
         printable_arr_amount.append(str(amount))
-        
+
         max_length_sizes = max(max_length_sizes, len(printable_arr_sizes[-1]))
         max_length_amount = max(max_length_amount, len(printable_arr_amount[-1]))
 
     returnable = []
     for size, amount in zip(printable_arr_sizes, printable_arr_amount):
         returnable.append((size.rjust(max_length_sizes), amount.rjust(max_length_amount)))
-    
+
     return returnable
+
 
 working_directory = sys.argv[1]
 
