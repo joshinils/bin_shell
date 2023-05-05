@@ -5,14 +5,14 @@ import multiprocessing as mp
 import pathlib
 import subprocess
 import traceback
-from typing import List, Optional, Tuple
+from typing import Final, List, Optional, Tuple
 
 import tqdm
 
-normalized_temp_single = pathlib.Path("normalized_temp_single")  # single extracted audio
-normalized_temp = pathlib.Path("normalized_temp")  # single normalized audio
-normalized_output = pathlib.Path("normalized")  # finished combined file
-normalized_done = pathlib.Path("normalized_done")  # original file, not to be deleted
+normalized_temp_single: Final[pathlib.Path] = pathlib.Path("normalized_temp_single")  # single extracted audio
+normalized_temp: Final[pathlib.Path] = pathlib.Path("normalized_temp")  # single normalized audio
+normalized_output: Final[pathlib.Path] = pathlib.Path("normalized")  # finished combined file
+normalized_done: Final[pathlib.Path] = pathlib.Path("normalized_done")  # original file, not to be deleted
 
 
 def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
