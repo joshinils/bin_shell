@@ -149,7 +149,7 @@ def main() -> None:
     #     print(f"{i:03}", get_percentage_bar(i, hundred, 1, 1))
     # exit()
 
-    reg_str = r"""(Stream |Second Pass)(?:(\d+)\/(\d+))*: +\d+%\|[ ▏▎▍▌▋▊▉█]{10}\| +(\d+)\/100 \[([\d:,\?]+)<([\d:,\?]+), +([\d\.,?]+)(it\/s|s\/it)\](?:.*)\./(.*)\.log"""
+    reg_str = r"""(Stream |Second Pass)(?:(\d+)\/(\d+))*: +\d+%\|[ ▏▎▍▌▋▊▉█]{10}\| +(\d+\.*\d*)\/100 \[([\d:,\?]+)<([\d:,\?]+), +([\d\.,?]+)(it\/s|s\/it)\](?:.*)\./(.*)\.log"""
     regex = re.compile(reg_str)
 
     for line in sys.stdin:
@@ -233,8 +233,8 @@ def main() -> None:
         # info_one = f"{seconds_left:05.0f} {time_str} {format_timedelta(total_time_left)} {total_percent:5.1f}%"
 
         percent_small = ""
-        if percent_done <= 9:
-            percent_small = f" {percent_done}"
+        if percent_done <= 3:
+            percent_small = f" {percent_done:4.2f}"
 
         info_one = f"{format_timedelta(total_time_left)} {time_str} {total_percent:5.1f}%{percent_small}"
         info_one = info_one.replace(datetime.datetime.now().strftime('%Y-%m-%d'), " " * 10)

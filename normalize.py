@@ -9,6 +9,8 @@ from typing import Final, List, Optional, Tuple
 
 import tqdm
 
+# import ffmpeg_normalize
+
 normalized_temp_single: Final[pathlib.Path] = pathlib.Path("normalized_temp_single")  # single extracted audio
 normalized_temp: Final[pathlib.Path] = pathlib.Path("normalized_temp")  # single normalized audio
 normalized_output: Final[pathlib.Path] = pathlib.Path("normalized")  # finished combined file
@@ -176,7 +178,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         commands = commands + ["-map", f"{index+1}:a"]
 
     normalized_output.mkdir(exist_ok=True)
-    commands = commands + ["-map", "0:s", "-c", "copy", f"{normalized_output / video_path.name}", "-y"]
+    commands = commands + ["-map", "0:s?", "-c", "copy", f"{normalized_output / video_path.name}", "-y"]
     print(commands)
     try:
         sub_process_result = subprocess.run(
