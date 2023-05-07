@@ -32,21 +32,26 @@ def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
 def extract_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathlib.Path:
     path = path_number[0]
     stream_number = path_number[1]
+    normalized_temp_single.mkdir(exist_ok=True)
+    out_name: pathlib.Path = pathlib.Path(f"{normalized_temp_single / path.name}.audio-{stream_number:03}.mkv")
+    overwrite = "-n" if no_overwrite_intermediary else "-y"
+
     try:
-        normalized_temp_single.mkdir(exist_ok=True)
-        out_name: pathlib.Path = pathlib.Path(f"{normalized_temp_single / path.name}.audio-{stream_number:03}.mkv")
         sub_process_result = subprocess.run(
-            ["ffmpeg", "-i", path, "-map", f"0:a:{stream_number}", "-c", "copy", f"{out_name}", "-y"],
+            ["ffmpeg", "-hide_banner", overwrite, "-i", path, "-map", f"0:a:{stream_number}", "-c", "copy", f"{out_name}"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
-        if(sub_process_result.returncode) == 0:
+        if(sub_process_result.returncode == 0
+            or sub_process_result.returncode == 1 and no_overwrite_intermediary
+           ):
             return out_name
         else:
             sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
             print(sub_process_std_out)
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(sub_process_std_err)
+            print(f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
         print(e)
@@ -80,11 +85,12 @@ def get_codec(path: pathlib.Path) -> str:
         )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         sub_process_std_out = sub_process_std_out.strip()
-        if(sub_process_result.returncode) == 0:
+        if sub_process_result.returncode == 0:
             return sub_process_std_out
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(sub_process_std_err)
+            print(f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
         print(e)
@@ -100,11 +106,12 @@ def get_sample_rate(path: pathlib.Path) -> str:
         )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         sub_process_std_out = sub_process_std_out.strip()
-        if(sub_process_result.returncode) == 0:
+        if sub_process_result.returncode == 0:
             return sub_process_std_out
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(sub_process_std_err)
+            print(f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
         print(e)
@@ -120,11 +127,12 @@ def get_channel_count(path: pathlib.Path) -> int:
         )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         sub_process_std_out = sub_process_std_out.strip()
-        if(sub_process_result.returncode) == 0:
+        if sub_process_result.returncode == 0:
             return int(sub_process_std_out)
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(sub_process_std_err)
+            print(f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
         print(e)
@@ -133,17 +141,26 @@ def get_channel_count(path: pathlib.Path) -> int:
 
 def normalize_single_audio_file(path: pathlib.Path) -> pathlib.Path:
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / path.name}.normalized.mkv")
+    if no_overwrite_intermediary and out_name.is_file():
+        return out_name
+        # TODO unlink original
+        # TODO add codec to filename
+        # TODO add samplerate to filename
 
     codec = get_codec(path)
     sample_rate = get_sample_rate(path)
-    num_channels = get_channel_count(path)
-    audio_bitrate = (num_channels + 1) * 64000
+
+    bitrate_list = []
+    if not ignore_bitrate:
+        num_channels = get_channel_count(path)
+        audio_bitrate = (num_channels + 1) * 64000
+        bitrate_list = ["-b:a", f"{audio_bitrate}"]
 
     try:
         logfile_name = pathlib.Path(path.name + ".log")
         with open(logfile_name, "w") as logfile:
             sub_process_result = subprocess.run(
-                ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec, "-b:a", f"{audio_bitrate}", path, "-o", f"{out_name}", "-e", "-strict -2"],
+                ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [path, "-o", f"{out_name}", "-e", "-strict -2"],
                 stdout=logfile,
                 stderr=logfile
             )
@@ -152,7 +169,7 @@ def normalize_single_audio_file(path: pathlib.Path) -> pathlib.Path:
             logfile_name.unlink()  # remove logfile, everything went ok
             return out_name
         else:
-            print(sub_process_result.returncode)
+            print(f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
         print(type(e), e)
@@ -170,15 +187,17 @@ def normalize_audio_files(audio_paths: List[pathlib.Path]) -> List[pathlib.Path]
 
 
 def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio: List[pathlib.Path]) -> None:
-    commands = ["ffmpeg", "-i", f"{video_path}"]
+    overwrite = "-n" if no_overwrite_intermediary else "-y"
+    commands = ["ffmpeg", "-hide_banner", overwrite, "-i", f"{video_path}"]
     for path in normalized_audio:
         commands = commands + ["-i", f"{path}"]
-    commands = commands + ["-map", "0:v"]
+    commands = commands + ["-map", "0:v?"]
     for index in range(len(normalized_audio)):
         commands = commands + ["-map", f"{index+1}:a"]
 
     normalized_output.mkdir(exist_ok=True)
-    commands = commands + ["-map", "0:s?", "-c", "copy", f"{normalized_output / video_path.name}", "-y"]
+    out_name = normalized_output / video_path.name
+    commands = commands + ["-map", "0:s?", "-c", "copy", f"{out_name}"]
     print(commands)
     try:
         sub_process_result = subprocess.run(
@@ -188,12 +207,15 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         sub_process_std_out = sub_process_std_out.strip()
-        if(sub_process_result.returncode) == 0:
+        if(sub_process_result.returncode == 0
+            or sub_process_result.returncode == 1 and no_overwrite_intermediary
+           ):
             normalized_done.mkdir(exist_ok=True)
             video_path.rename(normalized_done / video_path.name)
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(sub_process_std_err)
+            print(f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
         print(traceback.print_exc())
@@ -201,6 +223,16 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         exit(2)
     for path in normalized_audio:
         path.unlink()
+
+
+global override_codec
+override_codec: str
+
+global ignore_bitrate
+ignore_bitrate: bool
+
+global no_overwrite_intermediary
+no_overwrite_intermediary: bool
 
 
 def main():
@@ -221,6 +253,18 @@ def main():
         metavar="codec",
     )
 
+    parser.add_argument(
+        "-nb",
+        "--ignore_bitrate",
+        action="store_true"
+    )
+
+    parser.add_argument(
+        "-n",
+        "--no_overwrite_intermediary",
+        action="store_true"
+    )
+
     args = parser.parse_args()
 
     path: pathlib.Path = pathlib.Path(args.path)
@@ -230,6 +274,10 @@ def main():
 
     global override_codec
     override_codec = args.force_codec
+    global ignore_bitrate
+    ignore_bitrate = args.ignore_bitrate
+    global no_overwrite_intermediary
+    no_overwrite_intermediary = args.no_overwrite_intermediary
 
     audio_paths = extract_audio_streams(path)
     normalized_audio_paths = normalize_audio_files(audio_paths)
