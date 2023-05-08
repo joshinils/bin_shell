@@ -149,22 +149,24 @@ def main() -> None:
     #     print(f"{i:03}", get_percentage_bar(i, hundred, 1, 1))
     # exit()
 
-    reg_str = r"""(Stream |Second Pass)(?:(\d+)\/(\d+))*: +\d+%\|[ ▏▎▍▌▋▊▉█]{10}\| +(\d+\.*\d*)\/100 \[([\d:,\?]+)<([\d:,\?]+), +([\d\.,?]+)(it\/s|s\/it)\](?:.*)\./(.*)\.log"""
+    reg_str = r"""(Stream |Second Pass|File)(?:(\d+)\/(\d+))*: +\d+%\|[ ▏▎▍▌▋▊▉█]{10}\| +(\d+\.*\d*)\/(10*) \[([\d:,\?]+)<([\d:,\?]+), +([\d\.,?]+)(it\/s|s\/it)\](?:.*)\./(.*)\.log"""
     regex = re.compile(reg_str)
 
     for line in sys.stdin:
         matches = regex.findall(line)
+
         stream_or_passes: str
         stream_current_str: str
         stream_total_str: str
         percent_done_str: str
+        percent_total_str: str
         time_elapsed_str: str
         time_remaining_str: str
         iteration_time_str: str
         it_s_it: str
         title: str
 
-        stream_or_passes, stream_current_str, stream_total_str, percent_done_str, time_elapsed_str, time_remaining_str, iteration_time_str, it_s_it, title, *_ = matches[0]
+        stream_or_passes, stream_current_str, stream_total_str, percent_done_str, percent_total_str, time_elapsed_str, time_remaining_str, iteration_time_str, it_s_it, title, *_ = matches[0]
 
         try:
             iteration_time = float(iteration_time_str)
@@ -175,6 +177,13 @@ def main() -> None:
             percent_done = float(percent_done_str)
         except Exception:
             percent_done = 1.0
+
+        try:
+            percent_total = float(percent_total_str)
+        except Exception:
+            percent_total = 100
+
+        percent_done /= percent_total / 100.0  # fix for 1/ 1 progress for file saving progress bar
 
         try:
             stream_current = int(stream_current_str)
@@ -200,7 +209,7 @@ def main() -> None:
             total_time_left = time_remaining + time_per_stream * streams_left + stream_total * time_per_stream
             if percent_done <= 2:
                 total_time_left += datetime.timedelta(hours=stream_total)
-        elif stream_or_passes == "Second Pass":
+        else:
             total_time_left = time_remaining
             if percent_done <= 2:
                 total_time_left += datetime.timedelta(hours=1)
