@@ -196,7 +196,12 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         commands = commands + ["-map", f"{index+1}:a"]
 
     normalized_output.mkdir(exist_ok=True)
-    out_name = normalized_output / video_path.name
+    out_name = video_path.name
+    if override_codec is not None:
+        name_parts = out_name.split(".")
+        last_part = name_parts.pop()
+        out_name = f"""{".".join(name_parts)} ({override_codec}).{last_part}"""
+    out_name = normalized_output / out_name
     commands = commands + ["-map", "0:s?", "-c", "copy", f"{out_name}"]
     print(commands)
     try:
