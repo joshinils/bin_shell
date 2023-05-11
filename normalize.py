@@ -151,9 +151,14 @@ def normalize_single_audio_file(path: pathlib.Path) -> pathlib.Path:
     sample_rate = get_sample_rate(path)
 
     bitrate_list = []
+    bitrate_lut = {
+        2: 128_000,
+        6: 320_000,
+        8: 448_000
+    }
     if not ignore_bitrate:
         num_channels = get_channel_count(path)
-        audio_bitrate = (num_channels + 1) * 64000
+        audio_bitrate = bitrate_lut[num_channels]
         bitrate_list = ["-b:a", f"{audio_bitrate}"]
 
     try:
@@ -187,23 +192,18 @@ def normalize_audio_files(audio_paths: List[pathlib.Path]) -> List[pathlib.Path]
 
 
 def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio: List[pathlib.Path]) -> None:
-    overwrite = "-n" if no_overwrite_intermediary else "-y"
-    commands = ["ffmpeg", "-hide_banner", overwrite, "-i", f"{video_path}"]
-    for path in normalized_audio:
-        commands = commands + ["-i", f"{path}"]
-    commands = commands + ["-map", "0:v?"]
-    for index in range(len(normalized_audio)):
-        commands = commands + ["-map", f"{index+1}:a"]
+    video_path_name = video_path.name
+    if override_codec != "opus":
+        name_parts = video_path.name.split(".")
+        last_part = name_parts.pop()
+        video_path_name = f"""{".".join(name_parts)} ({override_codec}).{last_part}"""
+    out_name = normalized_output / video_path_name
 
     normalized_output.mkdir(exist_ok=True)
-    out_name = video_path.name
-    if override_codec is not None:
-        name_parts = out_name.split(".")
-        last_part = name_parts.pop()
-        out_name = f"""{".".join(name_parts)} ({override_codec}).{last_part}"""
-    out_name = normalized_output / out_name
-    commands = commands + ["-map", "0:s?", "-c", "copy", f"{out_name}"]
+
+    commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + normalized_audio
     print(commands)
+
     try:
         sub_process_result = subprocess.run(
             commands,
@@ -226,6 +226,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         print(traceback.print_exc())
         print(type(e), e)
         exit(2)
+
     for path in normalized_audio:
         path.unlink()
 
@@ -241,7 +242,7 @@ no_overwrite_intermediary: bool
 
 
 def main():
-    parser = argparse.ArgumentParser(description='normalizes a movie file, each audio track by itself')
+    parser = argparse.ArgumentParser(description='normalizes a movie file, each audio track by itself, encodes to opus with bitrates for channel layouts - 2ch = 128 kb/s, 5.1 = 320 kb/s, 7.1 = 448 kb/s')
 
     parser.add_argument(
         "path",
@@ -254,8 +255,9 @@ def main():
         "--force_codec",
         required=False,
         type=str,
-        default=None,
+        default="opus",
         metavar="codec",
+        help="default opus, with bitrates for opus",
     )
 
     parser.add_argument(
