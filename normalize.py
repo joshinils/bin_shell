@@ -202,6 +202,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     normalized_output.mkdir(exist_ok=True)
 
     commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + normalized_audio
+    commands = [str(elem) for elem in commands]
     print(commands)
 
     try:
