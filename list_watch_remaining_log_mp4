@@ -57,5 +57,3 @@ ls normalized
 ls normalized_done
 
 normalize_remaining_print.py
-
-list_audio_streams.sh
