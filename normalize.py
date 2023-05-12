@@ -22,10 +22,13 @@ def print_lineno() -> str:
 
 
 def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
+    commands = ['ffprobe', '-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', path]
     try:
-        sub_process_result = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', path],
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE)
+        sub_process_result = subprocess.run(
+            commands,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         return len(sub_process_std_out.rstrip().split("\n"))
     except Exception as e:
@@ -40,9 +43,11 @@ def extract_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathlib.Path:
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp_single / path.name}.audio-{stream_number:03}.mkv")
     overwrite = "-n" if no_overwrite_intermediary else "-y"
 
+    commands = ["ffmpeg", "-hide_banner", overwrite, "-i", path, "-map", f"0:a:{stream_number}", "-c", "copy", f"{out_name}"]
+    print("    ", commands)
     try:
         sub_process_result = subprocess.run(
-            ["ffmpeg", "-hide_banner", overwrite, "-i", path, "-map", f"0:a:{stream_number}", "-c", "copy", f"{out_name}"],
+            commands,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
@@ -67,9 +72,11 @@ def get_codec(path: pathlib.Path) -> str:
     if override_codec is not None:
         return override_codec
 
+    commands = ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_name", "-of", "default=noprint_wrappers=1:nokey=1", path]
+
     try:
         sub_process_result = subprocess.run(
-            ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_name", "-of", "default=noprint_wrappers=1:nokey=1", path],
+            commands,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
@@ -91,9 +98,11 @@ def get_sample_rate(path: pathlib.Path) -> str:
     if override_codec == "opus":
         return "48000"  # best for opus, can not be something else
 
+    commands = ["ffprobe", "-v", "error", "-select_streams", "a", "-of", "default=noprint_wrappers=1:nokey=1", "-show_entries", "stream=sample_rate", path]
+
     try:
         sub_process_result = subprocess.run(
-            ["ffprobe", "-v", "error", "-select_streams", "a", "-of", "default=noprint_wrappers=1:nokey=1", "-show_entries", "stream=sample_rate", path],
+            commands,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
@@ -112,9 +121,10 @@ def get_sample_rate(path: pathlib.Path) -> str:
 
 
 def get_channel_count(path: pathlib.Path) -> int:
+    commands = ["ffprobe", "-show_entries", "stream=channels", "-of", "compact=p=0:nk=1", "-v", "0", path]
     try:
         sub_process_result = subprocess.run(
-            ["ffprobe", "-show_entries", "stream=channels", "-of", "compact=p=0:nk=1", "-v", "0", path],
+            commands,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
@@ -155,7 +165,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         bitrate_list = ["-b:a", f"{audio_bitrate}"]
 
     commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [path, "-o", f"{out_name}", "-e", "-strict -2"]
-    print(commands)
+    print("    ", commands)
     try:
         logfile_name = pathlib.Path(path.name + ".log")
         with open(logfile_name, "w") as logfile:
@@ -170,10 +180,6 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
             logfile_name.unlink()  # remove logfile, everything went ok
             return out_name
         else:
-            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
-            print(sub_process_std_out)
-            sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
-            print(sub_process_std_err)
             print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
@@ -213,7 +219,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
 
     commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + normalized_audio
     commands = [str(elem) for elem in commands]
-    print(commands)
+    print("    ", commands)
 
     try:
         sub_process_result = subprocess.run(

@@ -3,6 +3,8 @@
 import os
 from typing import Dict, Tuple
 
+from normalize import get_amount_of_audio_streams
+
 extension_keep: Tuple[str] = (
     "ogg",
     "m4a",
@@ -71,14 +73,15 @@ def main():
             continue
         to_keep.append(name)
 
-    size_name = []
+    streams_size_name = []
     for name in to_keep:
-        size_name.append((os.path.getsize(name), name))
+        streams_size_name.append((get_amount_of_audio_streams(name), os.path.getsize(name), name))
 
-    size_name.sort(key=lambda x: x[0], reverse=True)
+    streams_size_name.sort(key=lambda x: x[1], reverse=False)
+    streams_size_name.sort(key=lambda x: x[0], reverse=False)
     print("Waiting:")
-    for size, name in size_name:
-        print(f"{make_size_str(size)}, {name}")
+    for stream_count, size, name in streams_size_name:
+        print(f"{stream_count:2d}, {make_size_str(size)}, {name}")
 
 
 if __name__ == "__main__":
