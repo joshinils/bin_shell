@@ -5,16 +5,20 @@ import multiprocessing as mp
 import pathlib
 import subprocess
 import traceback
+from inspect import currentframe, getframeinfo
 from typing import Final, List, Optional, Tuple
 
 import tqdm
-
-# import ffmpeg_normalize
 
 normalized_temp_single: Final[pathlib.Path] = pathlib.Path("normalized_temp_single")  # single extracted audio
 normalized_temp: Final[pathlib.Path] = pathlib.Path("normalized_temp")  # single normalized audio
 normalized_output: Final[pathlib.Path] = pathlib.Path("normalized")  # finished combined file
 normalized_done: Final[pathlib.Path] = pathlib.Path("normalized_done")  # original file, not to be deleted
+
+
+def print_lineno() -> str:
+    cf = currentframe()
+    return f"{getframeinfo(cf).filename}:{cf.f_back.f_lineno}"
 
 
 def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
@@ -25,7 +29,7 @@ def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         return len(sub_process_std_out.rstrip().split("\n"))
     except Exception as e:
-        print(e)
+        print(print_lineno(), type(e), e)
         return None
 
 
@@ -51,10 +55,10 @@ def extract_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathlib.Path:
             print(sub_process_std_out)
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(sub_process_std_err)
-            print(f"{sub_process_result.returncode=}")
+            print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
-        print(e)
+        print(print_lineno(), type(e), e)
         exit(2)
 
 
@@ -76,14 +80,17 @@ def get_codec(path: pathlib.Path) -> str:
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(sub_process_std_err)
-            print(f"{sub_process_result.returncode=}")
+            print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
-        print(e)
+        print(print_lineno(), type(e), e)
         exit(2)
 
 
 def get_sample_rate(path: pathlib.Path) -> str:
+    if override_codec == "opus":
+        return "48000"  # best for opus, can not be something else
+
     try:
         sub_process_result = subprocess.run(
             ["ffprobe", "-v", "error", "-select_streams", "a", "-of", "default=noprint_wrappers=1:nokey=1", "-show_entries", "stream=sample_rate", path],
@@ -97,10 +104,10 @@ def get_sample_rate(path: pathlib.Path) -> str:
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(sub_process_std_err)
-            print(f"{sub_process_result.returncode=}")
+            print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
-        print(e)
+        print(print_lineno(), type(e), e)
         exit(2)
 
 
@@ -118,10 +125,10 @@ def get_channel_count(path: pathlib.Path) -> int:
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(sub_process_std_err)
-            print(f"{sub_process_result.returncode=}")
+            print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
-        print(e)
+        print(print_lineno(), type(e), e)
         exit(2)
 
 
@@ -147,12 +154,14 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         audio_bitrate = bitrate_lut[num_channels]
         bitrate_list = ["-b:a", f"{audio_bitrate}"]
 
+    commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [path, "-o", f"{out_name}", "-e", "-strict -2"]
+    print(commands)
     try:
         logfile_name = pathlib.Path(path.name + ".log")
         with open(logfile_name, "w") as logfile:
             normalized_temp.mkdir(exist_ok=True)
             sub_process_result = subprocess.run(
-                ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [path, "-o", f"{out_name}", "-e", "-strict -2"],
+                commands,
                 stdout=logfile,
                 stderr=logfile
             )
@@ -161,10 +170,14 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
             logfile_name.unlink()  # remove logfile, everything went ok
             return out_name
         else:
-            print(f"{sub_process_result.returncode=}")
+            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
+            print(sub_process_std_out)
+            sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
+            print(sub_process_std_err)
+            print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
-        print(type(e), e)
+        print(print_lineno(), type(e), e)
         exit(2)
 
 
@@ -218,7 +231,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(sub_process_std_err)
-            print(f"{sub_process_result.returncode=}")
+            print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
         print(traceback.print_exc())
