@@ -150,6 +150,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
     try:
         logfile_name = pathlib.Path(path.name + ".log")
         with open(logfile_name, "w") as logfile:
+            normalized_temp.mkdir(exist_ok=True)
             sub_process_result = subprocess.run(
                 ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [path, "-o", f"{out_name}", "-e", "-strict -2"],
                 stdout=logfile,
