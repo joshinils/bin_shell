@@ -29,7 +29,7 @@ def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
         return None
 
 
-def extract_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathlib.Path:
+def extract_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathlib.Path:
     path = path_number[0]
     stream_number = path_number[1]
     normalized_temp_single.mkdir(exist_ok=True)
@@ -56,20 +56,6 @@ def extract_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathli
     except Exception as e:
         print(e)
         exit(2)
-
-
-def extract_audio_streams(path: pathlib.Path) -> List[pathlib.Path]:
-    audio_stream_count = get_amount_of_audio_streams(path)
-    with mp.Pool(processes=audio_stream_count) as mp_pool:
-        tasks = []
-        for audio_stream in range(audio_stream_count):
-            tasks.append((path, audio_stream))
-        result_paths: List[pathlib.Path] = list(tqdm.tqdm(mp_pool.imap_unordered(extract_single_audio_stream, tasks), total=audio_stream_count, desc="extract audio streams"))
-        result_paths.sort()
-        # mp_pool.close()
-        # mp_pool.join()
-
-    return result_paths
 
 
 def get_codec(path: pathlib.Path) -> str:
@@ -139,7 +125,7 @@ def get_channel_count(path: pathlib.Path) -> int:
         exit(2)
 
 
-def normalize_single_audio_file(path: pathlib.Path) -> pathlib.Path:
+def normalize(path: pathlib.Path) -> pathlib.Path:
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / path.name}.normalized.mkv")
     if no_overwrite_intermediary and out_name.is_file():
         path.unlink()  # remove old single extracted audio file
@@ -181,13 +167,23 @@ def normalize_single_audio_file(path: pathlib.Path) -> pathlib.Path:
         exit(2)
 
 
-def normalize_audio_files(audio_paths: List[pathlib.Path]) -> List[pathlib.Path]:
-    with mp.Pool(processes=len(audio_paths)) as mp_pool:
-        pathlib.Path("normalized_temp").mkdir(exist_ok=True)
-        result_paths: List[pathlib.Path] = list(tqdm.tqdm(mp_pool.imap_unordered(normalize_single_audio_file, audio_paths), total=len(audio_paths), desc="normalize audio files"))
+def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathlib.Path:
+    audio_path = extract_audio_stream(path_number)
+    normalized_path = normalize(audio_path)
+    return normalized_path
+
+
+def extract_and_normalize(path: pathlib.Path) -> List[pathlib.Path]:
+    audio_stream_count = get_amount_of_audio_streams(path)
+    with mp.Pool(processes=audio_stream_count) as mp_pool:
+        tasks = []
+        for audio_stream in range(audio_stream_count):
+            tasks.append((path, audio_stream))
+        result_paths: List[pathlib.Path] = list(tqdm.tqdm(mp_pool.imap_unordered(extract_and_normalize_single_audio_stream, tasks), total=audio_stream_count, desc="extract and normalize"))
         result_paths.sort()
         # mp_pool.close()
         # mp_pool.join()
+
     return result_paths
 
 
@@ -287,8 +283,7 @@ def main():
     global no_overwrite_intermediary
     no_overwrite_intermediary = args.no_overwrite_intermediary
 
-    audio_paths = extract_audio_streams(path)
-    normalized_audio_paths = normalize_audio_files(audio_paths)
+    normalized_audio_paths = extract_and_normalize(path)
     merge_normalized_with_video_subs(video_path=path, normalized_audio=normalized_audio_paths)
 
 
