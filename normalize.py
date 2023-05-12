@@ -142,8 +142,8 @@ def get_channel_count(path: pathlib.Path) -> int:
 def normalize_single_audio_file(path: pathlib.Path) -> pathlib.Path:
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / path.name}.normalized.mkv")
     if no_overwrite_intermediary and out_name.is_file():
+        path.unlink()  # remove old single extracted audio file
         return out_name
-        # TODO unlink original
         # TODO add codec to filename
         # TODO add samplerate to filename
 
