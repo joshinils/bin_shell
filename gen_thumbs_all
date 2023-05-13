@@ -13,7 +13,6 @@ cpus=$(grep -c ^processor /proc/cpuinfo)
 cores=$([ $cpus -le "$max_threads" ] && echo "$cpus" || echo "$max_threads")
 
 find * -maxdepth 0 -type f \( -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.webm" \) -print0 | shuf --zero-terminated | while IFS= read -r -d '' file; do
-    # echo "file = $file"
     sem --id $$ --lb -j "${cores}" gen_thumbs "\"${file}\"" "${1}" "${2}" "${3}"
 done
 sem --id $$ --wait
