@@ -52,6 +52,7 @@ rm -f $var
 echo -e " "
 echo $PWD
 screen -ls
+echo
 
 normalize_remaining_print.py
 echo
