@@ -120,9 +120,12 @@ def main():
 
     streams_size_name.sort(key=lambda x: x[1], reverse=False)
     streams_size_name.sort(key=lambda x: x[0], reverse=False)
-    print("Waiting:")
-    for stream_count, size, name in streams_size_name:
-        print(f"{stream_count:2d}, {make_size_str(size)}, {name}")
+    if len(streams_size_name) > 0:
+        print("Waiting:")
+        for stream_count, size, name in streams_size_name:
+            print(f"{stream_count:2d}, {make_size_str(size)}, {name}")
+    else:
+        print("Waiting: None")
 
 
 if __name__ == "__main__":

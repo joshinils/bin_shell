@@ -53,7 +53,32 @@ echo -e " "
 echo $PWD
 screen -ls
 
-ls normalized
-ls normalized_done
-
 normalize_remaining_print.py
+echo
+
+if [ $(ls normalized|wc -l) -gt 0 ] ; then
+    echo "normalized:"
+    ls normalized
+else
+    echo "normalized: empty"
+fi
+echo
+
+if [ $(ls normalized_done|wc -l) -gt 0 ] ; then
+    echo "normalized_done:"
+    ls normalized_done
+else
+    echo "normalized_done: empty"
+fi
+echo
+
+if [ $(ls normalized_temp|wc -l) -gt 0 ] ; then
+    echo "normalized_temp: $(ls normalized_temp|wc -l)"
+    ls normalized_temp
+    echo
+fi
+if [ $(ls normalized_temp_single|wc -l) -gt 0 ] ; then
+    echo "normalized_temp_single: $(ls normalized_temp_single|wc -l)"
+    ls normalized_temp_single
+    echo
+fi
