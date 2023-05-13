@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import pathlib
 import pickle
 from typing import Dict, Tuple
 
@@ -55,7 +56,7 @@ def make_size_str(size_B: int) -> str:
         return f"{size_B / size:7.2f} {name}"
 
 
-pickled_filename = "file_meta.pkl"
+pickled_filename = pathlib.Path(".file_meta.pkl")
 
 
 def pickle_load_filemeta() -> Dict[str, Tuple[int, int]]:
@@ -70,6 +71,9 @@ def pickle_load_filemeta() -> Dict[str, Tuple[int, int]]:
 
 
 def pickle_save_filemeta(metadata: Dict[str, Tuple[int, int]]) -> None:
+    if not metadata:
+        pickled_filename.unlink()
+
     with open(pickled_filename, 'wb') as f:
         pickle.dump(metadata, f)
 
