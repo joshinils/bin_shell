@@ -48,11 +48,12 @@ done
 export LC_ALL=C
 cat $var | sed 'h;s/\x1b[[0-9;]*m//g;s/▏/ /g;s/▎/ /g;s/▍/ /g;s/▌/ /g;s/▋/ /g;s/▊/ /g;s/▉/ /g;s/█/ /g;G;s/\n/\t/' | sort | cut -f2-  # https://stackoverflow.com/a/29401114
 rm -f $var
-
 echo -e " "
+
 echo $PWD
-screen -ls
 echo
+
+screen -ls
 
 normalize_remaining_print.py
 echo

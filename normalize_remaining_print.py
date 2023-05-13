@@ -72,7 +72,12 @@ def pickle_load_filemeta() -> Dict[str, Tuple[int, int]]:
 
 def pickle_save_filemeta(metadata: Dict[str, Tuple[int, int]]) -> None:
     if not metadata:
-        pickled_filename.unlink()
+        try:
+            pickled_filename.unlink()
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            print(type(e), e)
         return
 
     with open(pickled_filename, 'wb') as f:
