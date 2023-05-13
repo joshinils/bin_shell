@@ -228,10 +228,19 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
             stderr=subprocess.PIPE
         )
         if(sub_process_result.returncode == 0
-            or sub_process_result.returncode == 1 and no_overwrite_intermediary
+            or sub_process_result.returncode > 0 and no_overwrite_intermediary
            ):
             normalized_done.mkdir(exist_ok=True)
             video_path.rename(normalized_done / video_path.name)
+        elif sub_process_result.returncode == 1 and not no_overwrite_intermediary:
+            normalized_done.mkdir(exist_ok=True)
+            video_path.rename(normalized_done / video_path.name)
+
+            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore").replace("\\n", "warning:    \n")
+            print(print_lineno(), f"\nwarning:    {sub_process_std_out=}")
+            sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore").replace("\\n", "warning:    \n")
+            print(print_lineno(), f"\nwarning:    {sub_process_std_err=}")
+            print(print_lineno(), f"{sub_process_result.returncode=}")
         else:
             sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
             print(print_lineno(), f"{sub_process_std_out=}")
