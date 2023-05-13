@@ -56,11 +56,11 @@ def extract_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathlib.Path:
            ):
             return out_name
         else:
-            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
-            print(sub_process_std_out)
-            sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
-            print(sub_process_std_err)
             print(print_lineno(), f"{sub_process_result.returncode=}")
+            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
+            print(print_lineno(), f"{sub_process_std_out=}")
+            sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
+            print(print_lineno(), f"{sub_process_std_err=}")
             exit(3)
     except Exception as e:
         print(print_lineno(), type(e), e)
@@ -86,7 +86,7 @@ def get_codec(path: pathlib.Path) -> str:
             return sub_process_std_out
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
-            print(sub_process_std_err)
+            print(print_lineno(), f"{sub_process_std_err=}")
             print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
@@ -112,7 +112,7 @@ def get_sample_rate(path: pathlib.Path) -> str:
             return sub_process_std_out
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
-            print(sub_process_std_err)
+            print(print_lineno(), f"{sub_process_std_err=}")
             print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
@@ -134,7 +134,7 @@ def get_channel_count(path: pathlib.Path) -> int:
             return int(sub_process_std_out)
         else:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
-            print(sub_process_std_err)
+            print(print_lineno(), f"{sub_process_std_err=}")
             print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
@@ -180,7 +180,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
             logfile_name.unlink()  # remove logfile, everything went ok
             return out_name
         else:
-            print(print_lineno(), f"{sub_process_result.returncode=}")
+            print(print_lineno(), f"{sub_process_result.returncode=}", f"""see logfile: "{logfile_name=}" """)
             exit(3)
     except Exception as e:
         print(print_lineno(), type(e), e)
@@ -227,16 +227,16 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
-        sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
-        sub_process_std_out = sub_process_std_out.strip()
         if(sub_process_result.returncode == 0
             or sub_process_result.returncode == 1 and no_overwrite_intermediary
            ):
             normalized_done.mkdir(exist_ok=True)
             video_path.rename(normalized_done / video_path.name)
         else:
+            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
+            print(print_lineno(), f"{sub_process_std_out=}")
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
-            print(sub_process_std_err)
+            print(print_lineno(), f"{sub_process_std_err=}")
             print(print_lineno(), f"{sub_process_result.returncode=}")
             exit(3)
     except Exception as e:
