@@ -22,7 +22,7 @@ def print_lineno() -> str:
 
 
 def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
-    commands = ['ffprobe', '-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', path]
+    commands = ['ffprobe', '-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', f"{path}"]
     try:
         sub_process_result = subprocess.run(
             commands,
@@ -43,7 +43,7 @@ def extract_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathlib.Path:
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp_single / path.name}.audio-{stream_number:03}.mkv")
     overwrite = "-n" if no_overwrite_intermediary else "-y"
 
-    commands = ["ffmpeg", "-hide_banner", overwrite, "-i", path, "-map", f"0:a:{stream_number}", "-c", "copy", f"{out_name}"]
+    commands = ["ffmpeg", "-hide_banner", overwrite, "-i", f"{path}", "-map", f"0:a:{stream_number}", "-c", "copy", f"{out_name}"]
     print("    ", commands)
     try:
         sub_process_result = subprocess.run(
@@ -72,7 +72,7 @@ def get_codec(path: pathlib.Path) -> str:
     if override_codec is not None:
         return override_codec
 
-    commands = ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_name", "-of", "default=noprint_wrappers=1:nokey=1", path]
+    commands = ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_name", "-of", "default=noprint_wrappers=1:nokey=1", f"{path}"]
 
     try:
         sub_process_result = subprocess.run(
@@ -98,7 +98,7 @@ def get_sample_rate(path: pathlib.Path) -> str:
     if override_codec == "opus":
         return "48000"  # best for opus, can not be something else
 
-    commands = ["ffprobe", "-v", "error", "-select_streams", "a", "-of", "default=noprint_wrappers=1:nokey=1", "-show_entries", "stream=sample_rate", path]
+    commands = ["ffprobe", "-v", "error", "-select_streams", "a", "-of", "default=noprint_wrappers=1:nokey=1", "-show_entries", "stream=sample_rate", f"{path}"]
 
     try:
         sub_process_result = subprocess.run(
@@ -121,7 +121,7 @@ def get_sample_rate(path: pathlib.Path) -> str:
 
 
 def get_channel_count(path: pathlib.Path) -> int:
-    commands = ["ffprobe", "-show_entries", "stream=channels", "-of", "compact=p=0:nk=1", "-v", "0", path]
+    commands = ["ffprobe", "-show_entries", "stream=channels", "-of", "compact=p=0:nk=1", "-v", "0", f"{path}"]
     try:
         sub_process_result = subprocess.run(
             commands,
@@ -164,7 +164,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         audio_bitrate = bitrate_lut[num_channels]
         bitrate_list = ["-b:a", f"{audio_bitrate}"]
 
-    commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [path, "-o", f"{out_name}", "-e", "-strict -2"]
+    commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", "-strict -2"]
     print("    ", commands)
     try:
         logfile_name = pathlib.Path(path.name + ".log")
