@@ -13,6 +13,7 @@ import tqdm
 
 normalized_temp_single: Final[pathlib.Path] = pathlib.Path("normalized_temp_single")  # single extracted audio
 normalized_temp: Final[pathlib.Path] = pathlib.Path("normalized_temp")  # single normalized audio
+normalized_output_staging: Final[pathlib.Path] = pathlib.Path("normalized_staging")  # compile combined file here
 normalized_output: Final[pathlib.Path] = pathlib.Path("normalized")  # finished combined file
 normalized_done: Final[pathlib.Path] = pathlib.Path("normalized_done")  # original file, not to be deleted
 
@@ -215,41 +216,47 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         name_parts = video_path.name.split(".")
         last_part = name_parts.pop()
         video_path_name = f"""{".".join(name_parts)} ({override_codec}).{last_part}"""
-    out_name = normalized_output / video_path_name
 
-    normalized_output.mkdir(exist_ok=True)
+    out_name = normalized_output_staging / video_path_name
 
     commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + normalized_audio
     commands = [str(elem) for elem in commands]
     print("    ", commands)
 
     try:
+        normalized_output_staging.mkdir(exist_ok=True)
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
-        if(sub_process_result.returncode == 0
-            or sub_process_result.returncode > 0 and no_overwrite_intermediary
-           ):
-            normalized_done.mkdir(exist_ok=True)
-            video_path.rename(normalized_done / video_path.name)
-        elif sub_process_result.returncode == 1 and not no_overwrite_intermediary:
+        status_ok = sub_process_result.returncode == 0
+        warning = sub_process_result.returncode == 1
+        error = sub_process_result.returncode != 0 and sub_process_result.returncode != 1
+
+        if status_ok or warning:
             normalized_done.mkdir(exist_ok=True)
             video_path.rename(normalized_done / video_path.name)
 
-            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore").replace("\\n", "warning:    \n")
-            print(print_lineno(), f"\nwarning:    {sub_process_std_out=}")
-            sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore").replace("\\n", "warning:    \n")
-            print(print_lineno(), f"\nwarning:    {sub_process_std_err=}")
-            print(print_lineno(), f"{sub_process_result.returncode=}")
-        else:
+            normalized_output.mkdir(exist_ok=True)
+            out_name.rename(normalized_output / video_path.name)
+            shutil.rmtree(normalized_output_staging, ignore_errors=True)  # rm empty dir
+
+        if not status_ok:
             sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
-            print(print_lineno(), f"{sub_process_std_out=}")
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
-            print(print_lineno(), f"{sub_process_std_err=}")
             print(print_lineno(), f"{sub_process_result.returncode=}")
-            exit(3)
+
+            if warning:
+                sub_process_std_err = sub_process_std_err.replace("\\n", "warning:    \n")
+                sub_process_std_out = sub_process_std_out.replace("\\n", "warning:    \n")
+                print(print_lineno(), f"\nwarning:    {sub_process_std_out=}")
+                print(print_lineno(), f"\nwarning:    {sub_process_std_err=}")
+
+            if error:
+                print(print_lineno(), f"{sub_process_std_out=}")
+                print(print_lineno(), f"{sub_process_std_err=}")
+                exit(3)
     except Exception as e:
         print(traceback.print_exc())
         print(type(e), e)
