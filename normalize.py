@@ -217,7 +217,7 @@ def extract_and_normalize(path: pathlib.Path) -> List[pathlib.Path]:
         tasks = []
         for audio_stream in range(audio_stream_count):
             tasks.append((path, audio_stream))
-        result_paths: List[pathlib.Path] = list(tqdm.tqdm(mp_pool.imap_unordered(extract_and_normalize_single_audio_stream, tasks), total=audio_stream_count, desc="extract and normalize"))
+        result_paths: List[pathlib.Path] = list(tqdm.tqdm(mp_pool.imap_unordered(extract_and_normalize_single_audio_stream, tasks), dynamic_ncols=False, total=audio_stream_count, desc="extract and normalize"))
         result_paths.sort()
         # mp_pool.close()
         # mp_pool.join()
@@ -279,7 +279,6 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     for path in normalized_audio:
         path.unlink()
     rmdir(normalized_temp_single)
-    rmdir(normalized_temp)
     rmdir(normalized_staging)
 
 
@@ -339,7 +338,6 @@ def main():
     no_overwrite_intermediary = args.no_overwrite_intermediary
 
     rmdir(normalized_temp_single)
-    rmdir(normalized_temp)
     rmdir(normalized_staging)
     rmdir(normalized_output)
     rmdir(normalized_done)
