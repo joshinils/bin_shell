@@ -3,7 +3,6 @@
 import argparse
 import multiprocessing as mp
 import pathlib
-import shutil
 import subprocess
 import traceback
 from inspect import currentframe, getframeinfo
@@ -13,7 +12,7 @@ import tqdm
 
 normalized_temp_single: Final[pathlib.Path] = pathlib.Path("normalized_temp_single")  # single extracted audio
 normalized_temp: Final[pathlib.Path] = pathlib.Path("normalized_temp")  # single normalized audio
-normalized_output_staging: Final[pathlib.Path] = pathlib.Path("normalized_staging")  # compile combined file here
+normalized_staging: Final[pathlib.Path] = pathlib.Path("normalized_staging")  # compile combined file here
 normalized_output: Final[pathlib.Path] = pathlib.Path("normalized")  # finished combined file
 normalized_done: Final[pathlib.Path] = pathlib.Path("normalized_done")  # original file, not to be deleted
 
@@ -21,6 +20,22 @@ normalized_done: Final[pathlib.Path] = pathlib.Path("normalized_done")  # origin
 def print_lineno() -> str:
     cf = currentframe()
     return f"{getframeinfo(cf).filename}:{cf.f_back.f_lineno}"
+
+
+def rmdir(path: pathlib.Path) -> None:
+    # remove directory, iff empty
+    commands = ['rmdir', '--ignore-fail-on-non-empty', '-p', f"{path}"]
+    try:
+        sub_process_result = subprocess.run(
+            commands,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
+        return len(sub_process_std_out.rstrip().split("\n"))
+    except Exception as e:
+        print(print_lineno(), type(e), e)
+        return None
 
 
 def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
@@ -180,7 +195,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         if sub_process_result.returncode == 0:
             path.unlink()  # remove old single extracted audio file
             logfile_name.unlink()  # remove logfile, everything went ok
-            shutil.rmtree(normalized_temp, ignore_errors=True)  # rm empty dir
+            rmdir(normalized_temp_single)
             return out_name
         else:
             print(print_lineno(), f"{sub_process_result.returncode=}", f"""see logfile: "{logfile_name=}" """)
@@ -217,14 +232,14 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         last_part = name_parts.pop()
         video_path_name = f"""{".".join(name_parts)} ({override_codec}).{last_part}"""
 
-    out_name = normalized_output_staging / video_path_name
+    out_name = normalized_staging / video_path_name
 
     commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + normalized_audio
     commands = [str(elem) for elem in commands]
     print("    ", commands)
 
     try:
-        normalized_output_staging.mkdir(exist_ok=True)
+        normalized_staging.mkdir(exist_ok=True)
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
@@ -240,8 +255,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
 
             normalized_output.mkdir(exist_ok=True)
             out_name.rename(normalized_output / video_path.name)
-            shutil.rmtree(normalized_output_staging, ignore_errors=True)  # rm empty dir
-
+            rmdir(normalized_staging)
         if not status_ok:
             sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
@@ -264,7 +278,9 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
 
     for path in normalized_audio:
         path.unlink()
-    shutil.rmtree(normalized_output, ignore_errors=True)  # rm empty dir
+    rmdir(normalized_temp_single)
+    rmdir(normalized_temp)
+    rmdir(normalized_staging)
 
 
 global override_codec
@@ -321,6 +337,12 @@ def main():
     ignore_bitrate = args.ignore_bitrate
     global no_overwrite_intermediary
     no_overwrite_intermediary = args.no_overwrite_intermediary
+
+    rmdir(normalized_temp_single)
+    rmdir(normalized_temp)
+    rmdir(normalized_staging)
+    rmdir(normalized_output)
+    rmdir(normalized_done)
 
     normalized_audio_paths = extract_and_normalize(path)
     merge_normalized_with_video_subs(video_path=path, normalized_audio=normalized_audio_paths)
