@@ -58,29 +58,46 @@ screen -ls
 normalize_remaining_print.py
 echo
 
-if [ $(ls normalized|wc -l) -gt 0 ] ; then
-    echo "normalized:"
-    ls normalized
-else
-    echo "normalized: empty"
-fi
-echo
-
-if [ $(ls normalized_done|wc -l) -gt 0 ] ; then
-    echo "normalized_done:"
-    ls normalized_done
-else
-    echo "normalized_done: empty"
-fi
-echo
-
-if [ $(ls normalized_temp|wc -l) -gt 0 ] ; then
-    echo "normalized_temp: $(ls normalized_temp|wc -l)"
-    ls normalized_temp
+if [ -d "normalized" ]; then
+    if [ $(ls normalized|wc -l) -gt 0 ] ; then
+        echo "normalized:"
+        ls normalized
+    else
+        echo "normalized: empty"
+    fi
     echo
 fi
-if [ $(ls normalized_temp_single|wc -l) -gt 0 ] ; then
-    echo "normalized_temp_single: $(ls normalized_temp_single|wc -l)"
-    ls normalized_temp_single
+
+if [ -d "normalized_staging" ]; then
+    if [ $(ls normalized_staging|wc -l) -gt 0 ] ; then
+        echo "normalized_staging:"
+        ls normalized_staging
+        echo
+    fi
+fi
+
+if [ -d "normalized_done" ]; then
+    if [ $(ls normalized_done|wc -l) -gt 0 ] ; then
+        echo "normalized_done:"
+        ls normalized_done
+    else
+        echo "normalized_done: empty"
+    fi
     echo
+fi
+
+if [ -d "normalized_temp" ]; then
+    if [ $(ls normalized_temp|wc -l) -gt 0 ] ; then
+        echo "normalized_temp: $(ls normalized_temp|wc -l)"
+        ls normalized_temp
+        echo
+    fi
+fi
+
+if [ -d "normalized_temp_single" ]; then
+    if [ $(ls normalized_temp_single|wc -l) -gt 0 ] ; then
+        echo "normalized_temp_single: $(ls normalized_temp_single|wc -l)"
+        ls normalized_temp_single
+        echo
+    fi
 fi
