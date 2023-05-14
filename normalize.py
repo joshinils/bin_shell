@@ -3,6 +3,7 @@
 import argparse
 import multiprocessing as mp
 import pathlib
+import shutil
 import subprocess
 import traceback
 from inspect import currentframe, getframeinfo
@@ -178,6 +179,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         if sub_process_result.returncode == 0:
             path.unlink()  # remove old single extracted audio file
             logfile_name.unlink()  # remove logfile, everything went ok
+            shutil.rmtree(normalized_temp, ignore_errors=True)  # rm empty dir
             return out_name
         else:
             print(print_lineno(), f"{sub_process_result.returncode=}", f"""see logfile: "{logfile_name=}" """)
@@ -255,6 +257,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
 
     for path in normalized_audio:
         path.unlink()
+    shutil.rmtree(normalized_output, ignore_errors=True)  # rm empty dir
 
 
 global override_codec
