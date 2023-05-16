@@ -58,46 +58,27 @@ screen -ls
 normalize_remaining_print.py
 echo
 
-if [ -d "normalized" ]; then
-    if [ $(ls normalized|wc -l) -gt 0 ] ; then
-        echo "normalized:"
-        ls normalized
-    else
-        echo "normalized: empty"
-    fi
-    echo
-fi
 
-if [ -d "normalized_staging" ]; then
-    if [ $(ls normalized_staging|wc -l) -gt 0 ] ; then
-        echo "normalized_staging:"
-        ls normalized_staging
+function print_folder_content_2()
+{
+    if [ -d "$1" ]; then
+        if [ $(ls "$1"|wc -l) -gt 0 ] ; then
+            echo "$1:"
+            find "$1"/* -maxdepth 0 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.MOV" -o -name "*.mov" \) -print0 | while IFS= read -r -d '' filename; do
+                name=$(basename "$filename")
+                size_bytes=$(stat -c "%s" "$filename")
+                size_human=$(echo $size_bytes | numfmt --to=iec)
+                echo -e "$name\t$size_human\t$size_bytes"
+            done | column -t -s $'\t'
+        else
+            echo "$1: empty"
+        fi
         echo
     fi
-fi
+}
 
-if [ -d "normalized_done" ]; then
-    if [ $(ls normalized_done|wc -l) -gt 0 ] ; then
-        echo "normalized_done:"
-        ls normalized_done
-    else
-        echo "normalized_done: empty"
-    fi
-    echo
-fi
-
-if [ -d "normalized_temp" ]; then
-    if [ $(ls normalized_temp|wc -l) -gt 0 ] ; then
-        echo "normalized_temp: $(ls normalized_temp|wc -l)"
-        ls normalized_temp
-        echo
-    fi
-fi
-
-if [ -d "normalized_temp_single" ]; then
-    if [ $(ls normalized_temp_single|wc -l) -gt 0 ] ; then
-        echo "normalized_temp_single: $(ls normalized_temp_single|wc -l)"
-        ls normalized_temp_single
-        echo
-    fi
-fi
+print_folder_content_2 "normalized"
+print_folder_content_2 "normalized_staging"
+print_folder_content_2 "normalized_done"
+print_folder_content_2 "normalized_temp"
+print_folder_content_2 "normalized_temp_single"
