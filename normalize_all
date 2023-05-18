@@ -11,29 +11,8 @@ function kill_sem() {
 }
 
 max_threads=${1:-12}
-sleep_time=${2:-10s}
 
 cpus=$(grep -c ^processor /proc/cpuinfo)
 threads=$([ $cpus -le "$max_threads" ] && echo "$cpus" || echo "$max_threads")
 
-loop=true
-while [ "$loop" = "true" ]; do
-    if [ $(find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" -o -name "*.webm" \)|wc -l) -le 0 ] ; then
-        break
-    fi
-
-    find . -maxdepth 1 \( -name "*.ogg" -o -name "*.mkv" -o -name "*.mp4" -o -name "*.m4a" -o -name "*.opus" -o -name "*.webm" \) -print0 | shuf --zero-terminated | while IFS= read -r -d '' fname; do
-        echo "fix log file needed for breaking for running ones"
-        exit 2
-        if [ -s "$fname".log ] ; then
-            continue
-        fi
-        parallel --semaphore --id $$ --lb -j "${threads}" "nice -n 20 normalize \"${fname}\""
-        break
-    done
-    sleep 4
-    sleep $sleep_time
-done
-
-parallel --semaphore --id $$ --wait
-wait
+find . -maxdepth 1 \( -iname "*.ogg" -o -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.m4a" -o -iname "*.opus" -o -iname "*.webm" \) -print0 | xargs -0 normalize.py -t $threads "${@:2}"

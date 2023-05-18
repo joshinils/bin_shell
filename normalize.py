@@ -161,8 +161,10 @@ def get_channel_count(path: pathlib.Path) -> int:
 
 def normalize(path: pathlib.Path) -> pathlib.Path:
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / path.name}.normalized.mkv")
+    logfile_name = pathlib.Path(path.name + ".log")
     if no_overwrite_intermediary and out_name.is_file():
         path.unlink()  # remove old single extracted audio file
+        logfile_name.unlink(missing_ok=True)
         return out_name
         # TODO add codec to filename
         # TODO add samplerate to filename
@@ -184,7 +186,6 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
     commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", "-strict -2"]
     print("    ", commands)
     try:
-        logfile_name = pathlib.Path(path.name + ".log")
         with open(logfile_name, "w") as logfile:
             normalized_temp.mkdir(exist_ok=True)
             sub_process_result = subprocess.run(
@@ -205,27 +206,19 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         exit(2)
 
 
-def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathlib.Path:
+def make_lockfile_name(path: pathlib.Path) -> pathlib.Path:
+    return pathlib.Path(str(path) + ".working")
+
+
+def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> Tuple[pathlib.Path, pathlib.Path]:
+    with open(make_lockfile_name(path_number[0]), "w"):
+        pass
     audio_path = extract_audio_stream(path_number)
     normalized_path = normalize(audio_path)
-    return normalized_path
+    return (normalized_path, path_number[0])
 
 
-def extract_and_normalize(path: pathlib.Path) -> List[pathlib.Path]:
-    audio_stream_count = get_amount_of_audio_streams(path)
-    with mp.Pool(processes=audio_stream_count) as mp_pool:
-        tasks = []
-        for audio_stream in range(audio_stream_count):
-            tasks.append((path, audio_stream))
-        result_paths: List[pathlib.Path] = list(tqdm.tqdm(mp_pool.imap_unordered(extract_and_normalize_single_audio_stream, tasks), dynamic_ncols=False, total=audio_stream_count, desc="extract and normalize"))
-        result_paths.sort()
-        # mp_pool.close()
-        # mp_pool.join()
-
-    return result_paths
-
-
-def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio: List[pathlib.Path]) -> None:
+def mkvmerge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio: List[pathlib.Path]) -> None:
     video_path_name = video_path.name
     if override_codec != "opus":
         name_parts = video_path.name.split(".")
@@ -281,6 +274,46 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     rmdir(normalized_temp_single)
     rmdir(normalized_staging)
 
+    make_lockfile_name(video_path).unlink()
+
+
+def extract_normalize_merge_all(paths: List[pathlib.Path]) -> None:
+    path_streams = []
+    for path in paths:
+        path_streams.append((path, get_amount_of_audio_streams(path), path.stat().st_size))
+
+    path_streams.sort(key=lambda x: x[2], reverse=True)
+    path_streams.sort(key=lambda x: x[1], reverse=True)
+
+    tasks = []
+    for path, audio_stream_count, _ in path_streams:
+        for audio_stream in range(audio_stream_count):
+            tasks.append((path, audio_stream))
+
+    with mp.Pool() as mp_pool_merge:
+        with mp.Pool(processes=max_threads) as mp_pool_extract_norm:
+            results = mp_pool_extract_norm.imap(extract_and_normalize_single_audio_stream, tasks)
+            mp_pool_extract_norm.close()
+
+            last_file = None
+            norm_paths = []
+            todo_count = len(tasks)
+            for path_normalized, path_orig in tqdm.tqdm(results, total=len(tasks), dynamic_ncols=True, desc="extract, norm, merge"):
+                todo_count -= 1
+                print(f"{todo_count=}", f"{path_normalized=}", f"{path_orig=}", f"{last_file=}", f"{norm_paths=}")
+                if (last_file is not None and last_file != path_orig) or todo_count <= 0:
+                    if todo_count <= 0:
+                        norm_paths.append(path_normalized)
+                        last_file = path_orig
+                    mp_pool_merge.apply_async(mkvmerge_normalized_with_video_subs, kwds={"video_path": last_file, "normalized_audio": norm_paths})
+                    norm_paths = []
+                last_file = path_orig
+                norm_paths.append(path_normalized)
+
+            mp_pool_extract_norm.join()
+        mp_pool_merge.close()
+        mp_pool_merge.join()
+
 
 global override_codec
 override_codec: str
@@ -291,14 +324,19 @@ ignore_bitrate: bool
 global no_overwrite_intermediary
 no_overwrite_intermediary: bool
 
+global max_threads
+max_threads: int
+
 
 def main():
     parser = argparse.ArgumentParser(description='normalizes a movie file, each audio track by itself, encodes to opus with bitrates for channel layouts - 2ch = 128 kb/s, 5.1 = 320 kb/s, 7.1 = 448 kb/s')
 
     parser.add_argument(
-        "path",
+        "paths",
         type=pathlib.Path,
-        help='path to file',
+        help='path(s) to file(s)',
+        metavar="path1 [path2 ...]",
+        nargs="+",
     )
 
     parser.add_argument(
@@ -309,6 +347,16 @@ def main():
         default="opus",
         metavar="codec",
         help="default opus, with bitrates for opus",
+    )
+
+    parser.add_argument(
+        "-t",
+        "--max_threads",
+        required=False,
+        type=int,
+        default=4,
+        metavar="thread_count",
+        help="default 4, threads to use",
     )
 
     parser.add_argument(
@@ -325,25 +373,36 @@ def main():
 
     args = parser.parse_args()
 
-    path: pathlib.Path = pathlib.Path(args.path)
-    if not path.exists():
-        print(f"""file "{path}" does not exist""")
+    input_paths: List[pathlib.Path] = [pathlib.Path(p) for p in args.paths]
+    paths = []
+    for pot_path in input_paths:
+        if not pot_path.exists():
+            print(f"""file "{pot_path}" does not exist, ignoring file""")
+        else:
+            paths.append(pot_path)
+
+    if len(paths) == 0:
+        print("no existing paths give, exiting")
         exit(1)
 
     global override_codec
     override_codec = args.force_codec
+
     global ignore_bitrate
     ignore_bitrate = args.ignore_bitrate
+
     global no_overwrite_intermediary
     no_overwrite_intermediary = args.no_overwrite_intermediary
+
+    global max_threads
+    max_threads = args.max_threads
 
     rmdir(normalized_temp_single)
     rmdir(normalized_staging)
     rmdir(normalized_output)
     rmdir(normalized_done)
 
-    normalized_audio_paths = extract_and_normalize(path)
-    merge_normalized_with_video_subs(video_path=path, normalized_audio=normalized_audio_paths)
+    extract_normalize_merge_all(paths)
 
 
 if __name__ == "__main__":

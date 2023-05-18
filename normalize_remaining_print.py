@@ -90,21 +90,14 @@ def main():
     # print()
     to_remove = []
     for name in filenames:
-        if name.endswith(".log"):
-            to_remove.append(name[:-4])
-            for i in range(999):
-                ending = f".audio-{i:03d}.mkv.log"  # Kill Bill: Volume 2_2004 - BD.mkv.audio-001.mkv.log
-                if name.endswith(ending):
-                    to_remove.append(name.replace(ending, ""))
-                    break
+        if name.endswith(".working"):
+            to_remove.append(name[:-8])
 
     to_keep = []
     for name in filenames:
-        if name.endswith(".log"):
-            continue
         if name in to_remove:
             continue
-        if not name.endswith(extension_keep):
+        if not name.lower().endswith(extension_keep):
             continue
         to_keep.append(name)
 
