@@ -25,3 +25,21 @@ n_th_frame=$(echo \($frames - 240\) / \($grid \* $grid\) | bc)
 # ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=320:180,tile=${grid}x${grid}" "${out_name// /_}" -y </dev/null
 nice -n 20 ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "./${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=iw*min(1\, 2560/(iw*$grid)):ih*min(1\, 2560/(iw*$grid))/sar,tile=${grid}x${grid}" "./${out_name}" "${yes_no}" </dev/null
 # ffmpeg                                   -ss     4212 -i "${1}"           -vf                                    scale=iw*sar    :  ih -frames:v 1 -q:v 2 out.jpg
+
+logo_file="../clearlogo.png"
+if [ -f "$logo_file" ]; then
+    if [ -n "${4}" ] && [ "${4}" != "thumb" ]; then
+        exit
+    fi
+    thumbnail="./${out_name}"
+
+    margin_percent=20 # minimaler abstand als summe links/rechts und oben/unten, je nach seitenverhältnis der bilder
+
+    # Berechne die Skalierungsfaktoren
+    thumbnail_width=$(identify -format "%w" "$thumbnail")
+    thumbnail_height=$(identify -format "%h" "$thumbnail")
+    scaled_logo_width=$(echo "$thumbnail_width * (100-$margin_percent) / 100" | bc -l)
+    scaled_logo_height=$(echo "$thumbnail_height * (100-$margin_percent) / 100" | bc -l)
+
+    convert "$thumbnail" \( "$logo_file" -resize "${scaled_logo_width}x${scaled_logo_height}" \) -gravity "center" -composite "$thumbnail"
+fi
