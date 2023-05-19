@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+if [ "$1" == "-h" ] || [ "$1" == "--help" ] || [ $# -lt 1 ]; then
+    echo "This script generates a tiled thumbnail image from a video file."
+    echo "Usage: $0 <video_file> [grid] [yes_no] [suffix]"
+    echo ""
+    echo "Arguments:"
+    echo "  video_file: The input video file."
+    echo "  grid (optional): The number of tiles per row/column. Default is 8."
+    echo "  yes_no (optional): Specify '-n' to skip processing if output file already exists. Default is '-y'."
+    echo "  suffix (optional): A suffix to append to the output file name. If not provided, no suffix is added."
+    exit 1
+fi
+
 grid=${2:-8}
 yes_no=${3:--y}
 
