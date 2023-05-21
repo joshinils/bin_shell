@@ -307,7 +307,7 @@ def extract_normalize_merge_all(paths: List[pathlib.Path]) -> None:
 
             for path_normalized, path_orig in tqdm.tqdm(results, total=len(tasks), dynamic_ncols=True, desc="extract, norm, merge"):
                 if path_normalized is None or path_orig is None:
-                    pass
+                    continue
                 dict_orig_normed_counts[path_orig]["done"].append(path_normalized)
                 if len(dict_orig_normed_counts[path_orig]["done"]) >= dict_orig_normed_counts[path_orig]["count"]:
                     mp_pool_merge.apply_async(mkvmerge_normalized_with_video_subs, kwds={"video_path": path_orig, "normalized_audio": dict_orig_normed_counts[path_orig]["done"]})
