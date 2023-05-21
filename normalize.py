@@ -6,7 +6,7 @@ import pathlib
 import subprocess
 import traceback
 from inspect import currentframe, getframeinfo
-from typing import Final, List, Optional, Tuple
+from typing import Dict, Final, List, Optional, Tuple, TypedDict
 
 import tqdm
 
@@ -15,6 +15,11 @@ normalized_temp: Final[pathlib.Path] = pathlib.Path("normalized_temp")  # single
 normalized_staging: Final[pathlib.Path] = pathlib.Path("normalized_staging")  # compile combined file here
 normalized_output: Final[pathlib.Path] = pathlib.Path("normalized")  # finished combined file
 normalized_done: Final[pathlib.Path] = pathlib.Path("normalized_done")  # original file, not to be deleted
+
+
+class NameInfo(TypedDict):
+    done: List[pathlib.Path]
+    count: int
 
 
 def print_lineno() -> str:
@@ -285,33 +290,25 @@ def extract_normalize_merge_all(paths: List[pathlib.Path]) -> None:
     path_streams.sort(key=lambda x: x[2], reverse=True)
     path_streams.sort(key=lambda x: x[1], reverse=True)
 
-    tasks = []
+    dict_orig_normed_counts: Dict[pathlib.Path, NameInfo] = dict()
+    tasks: List[Tuple[pathlib.Path, int]] = list()
     for path, audio_stream_count, _ in path_streams:
+        dict_orig_normed_counts[path] = {"done": [], "count": audio_stream_count}
         for audio_stream in range(audio_stream_count):
             tasks.append((path, audio_stream))
 
     with mp.Pool() as mp_pool_merge:
         with mp.Pool(processes=max_threads) as mp_pool_extract_norm:
-            results = mp_pool_extract_norm.imap(extract_and_normalize_single_audio_stream, tasks)
+            results = mp_pool_extract_norm.imap_unordered(extract_and_normalize_single_audio_stream, tasks)
             mp_pool_extract_norm.close()
 
-            last_file = None
-            norm_paths = []
-            todo_count = len(tasks)
             for path_normalized, path_orig in tqdm.tqdm(results, total=len(tasks), dynamic_ncols=True, desc="extract, norm, merge"):
-                todo_count -= 1
-                print(f"{todo_count=}", f"{path_normalized=}", f"{path_orig=}", f"{last_file=}", f"{norm_paths=}")
-                if (last_file is not None and last_file != path_orig) or todo_count <= 0:
-                    if todo_count <= 0:
-                        norm_paths.append(path_normalized)
-                        last_file = path_orig
-                    mp_pool_merge.apply_async(mkvmerge_normalized_with_video_subs, kwds={"video_path": last_file, "normalized_audio": norm_paths})
-                    norm_paths = []
-                last_file = path_orig
-                norm_paths.append(path_normalized)
-
+                dict_orig_normed_counts[path_orig]["done"].append(path_normalized)
+                if len(dict_orig_normed_counts[path_orig]["done"]) >= dict_orig_normed_counts[path_orig]["count"]:
+                    mp_pool_merge.apply_async(mkvmerge_normalized_with_video_subs, kwds={"video_path": path_orig, "normalized_audio": dict_orig_normed_counts[path_orig]["done"]})
+                    del dict_orig_normed_counts[path_orig]
+            mp_pool_merge.close()
             mp_pool_extract_norm.join()
-        mp_pool_merge.close()
         mp_pool_merge.join()
 
 
