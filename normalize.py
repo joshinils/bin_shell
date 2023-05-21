@@ -215,7 +215,10 @@ def make_lockfile_name(path: pathlib.Path) -> pathlib.Path:
     return pathlib.Path(str(path) + ".working")
 
 
-def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> Tuple[pathlib.Path, pathlib.Path]:
+def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> Tuple[Optional[pathlib.Path], Optional[pathlib.Path]]:
+    if not path_number[0].exists():
+        return (None, None)
+
     with open(make_lockfile_name(path_number[0]), "w"):
         pass
     audio_path = extract_audio_stream(path_number)
@@ -303,6 +306,8 @@ def extract_normalize_merge_all(paths: List[pathlib.Path]) -> None:
             mp_pool_extract_norm.close()
 
             for path_normalized, path_orig in tqdm.tqdm(results, total=len(tasks), dynamic_ncols=True, desc="extract, norm, merge"):
+                if path_normalized is None or path_orig is None:
+                    pass
                 dict_orig_normed_counts[path_orig]["done"].append(path_normalized)
                 if len(dict_orig_normed_counts[path_orig]["done"]) >= dict_orig_normed_counts[path_orig]["count"]:
                     mp_pool_merge.apply_async(mkvmerge_normalized_with_video_subs, kwds={"video_path": path_orig, "normalized_audio": dict_orig_normed_counts[path_orig]["done"]})

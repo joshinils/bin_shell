@@ -77,7 +77,7 @@ function print_folder_content_2()
 {
     if [ -d "$1" ]; then
         if [ $(ls "$1"|wc -l) -gt 0 ] ; then
-            echo "$1:"
+            echo "$1: $(ls $1 | wc -l)"
             find "$1"/* -maxdepth 0 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.MOV" -o -name "*.mov" \) -print0 | while IFS= read -r -d '' filename; do
                 name=$(basename "$filename")
                 size_bytes=$(stat -c "%s" "$filename")
