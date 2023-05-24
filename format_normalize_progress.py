@@ -203,7 +203,8 @@ def main() -> None:
 
         stream_num = ""
         if stream_or_passes == "Stream ":
-            stream_num = f"{stream_current:2}/{stream_total:2}"
+            if stream_total != 1:
+                stream_num = f"{stream_current:2}/{stream_total:2} "
             time_per_stream = time_elapsed + time_remaining
             streams_left = stream_total - stream_current
 
@@ -251,7 +252,7 @@ def main() -> None:
         info_one = f"{format_timedelta(total_time_left)} {time_str} {total_percent:5.1f}%{percent_small}"
         info_one = info_one.replace(datetime.datetime.now().strftime('%Y-%m-%d'), " " * 10)
         info_two = f"{title.rjust(name_length)}"
-        extra_info = f"{stream_num} {time_elapsed_str.rjust(8)} < {time_remaining_str.rjust(8)}{iteration_time:8.2f} {it_s_it} "
+        extra_info = f"{stream_num}{time_elapsed_str.rjust(8)} < {time_remaining_str.rjust(8)}{iteration_time:8.2f} {it_s_it} "
 
         # if total_percent < 50:
         #     extra_info = extra_info[::-1]
