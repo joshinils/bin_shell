@@ -179,6 +179,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
 
     bitrate_list = []
     bitrate_lut = {
+        1:  64_000,
         2: 128_000,
         6: 320_000,
         8: 448_000
