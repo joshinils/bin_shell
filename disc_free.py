@@ -3,6 +3,7 @@
 import inspect
 import os
 import shutil
+import sys
 
 
 def find_mount_point(path):
@@ -86,17 +87,36 @@ def make_size_str(size_B: int) -> str:
     return res
 
 
-totalstr = make_size_str(total)
-used_str = make_size_str(used)
-free_str = make_size_str(free)
+def main():
+    total_str = make_size_str(total)
+    used_str = make_size_str(used)
+    free_str = make_size_str(free)
 
-longest_str_size = max(len(totalstr), len(used_str), len(free_str))
+    print_reserved = len(sys.argv) > 1
 
-mount_info = mount
+    reserved_str = ""
+    if print_reserved:
+        reserved_str = make_size_str(total - free - used)
 
-if mount_point != mount:
-    mount_info += " " + mount_point
+    longest_str_size = max(len(total_str), len(used_str), len(free_str), len(reserved_str))
 
-print("total", totalstr.rjust(longest_str_size), mount_info)
-print("used ", used_str.rjust(longest_str_size) + f"{used / total * 100:10.5f}%")
-print("free ", free_str.rjust(longest_str_size) + f"{free / total * 100:10.5f}%")
+    mount_info = mount
+
+    if mount_point != mount:
+        mount_info += " " + mount_point
+
+    if not print_reserved:
+        if total - free - used > 0:
+            reserved_str = f"{(total - free - used) / total * 100:10.5f}% reserved"
+        print("total", total_str.rjust(longest_str_size), mount_info, reserved_str)
+        print("used ", used_str.rjust(longest_str_size) + f"{used / total * 100:10.5f}%")
+        print("free ", free_str.rjust(longest_str_size) + f"{free / total * 100:10.5f}%")
+    else:
+        print("total   ", total_str.rjust(longest_str_size), mount_info)
+        print("used    ", used_str.rjust(longest_str_size) + f"{used / total * 100:10.5f}%")
+        print("free    ", free_str.rjust(longest_str_size) + f"{free / total * 100:10.5f}%")
+        print("reserved", reserved_str.rjust(longest_str_size) + f"{(total - free - used) / total * 100:10.5f}%")
+
+
+if __name__ == "__main__":
+    main()
