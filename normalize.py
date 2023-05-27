@@ -179,7 +179,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
 
     bitrate_list = []
     bitrate_lut = {
-        1:  64_000,
+        1:  64_000,  # noqa: E241
         2: 128_000,
         6: 320_000,
         8: 448_000
@@ -228,13 +228,13 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
 
 
 def mkvmerge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio: List[pathlib.Path]) -> None:
-    video_path_name = video_path.name
+    video_out_name = video_path.name
     if override_codec != "opus":
         name_parts = video_path.name.split(".")
         last_part = name_parts.pop()
-        video_path_name = f"""{".".join(name_parts)} ({override_codec}).{last_part}"""
+        video_out_name = f"""{".".join(name_parts)} ({override_codec}).{last_part}"""
 
-    out_name = normalized_staging / video_path_name
+    out_name = normalized_staging / video_out_name
 
     commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + normalized_audio
     commands = [str(elem) for elem in commands]
@@ -256,7 +256,7 @@ def mkvmerge_normalized_with_video_subs(video_path: pathlib.Path, normalized_aud
             video_path.rename(normalized_done / video_path.name)
 
             normalized_output.mkdir(exist_ok=True)
-            out_name.rename(normalized_output / video_path.name)
+            out_name.rename(normalized_output / video_out_name)
             rmdir(normalized_staging)
         if not status_ok:
             sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
