@@ -183,7 +183,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         2: 128_000,  # stereo
         5: 192_000,  # 4.1, Alien 1978, 5-kanal
         6: 320_000,  # 5.1
-        8: 448_000  # 7.1
+        8: 448_000,  # 7.1
     }
     if not ignore_bitrate:
         num_channels = get_channel_count(path)

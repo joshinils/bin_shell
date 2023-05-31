@@ -211,12 +211,8 @@ def main() -> None:
             total_percent = ((stream_current - 1) * 100 + percent_done) / stream_total / 2
 
             total_time_left = time_remaining + time_per_stream * streams_left + stream_total * time_per_stream
-            if percent_done <= 2:
-                total_time_left += datetime.timedelta(hours=stream_total)
         else:
             total_time_left = time_remaining
-            if percent_done <= 2:
-                total_time_left += datetime.timedelta(hours=1)
 
         datetime_done = datetime.datetime.now() + total_time_left
 
