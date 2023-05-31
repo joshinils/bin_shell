@@ -179,10 +179,11 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
 
     bitrate_list = []
     bitrate_lut = {
-        1:  64_000,  # noqa: E241
-        2: 128_000,
-        6: 320_000,
-        8: 448_000
+        1:  64_000,  # noqa: E241  # mono
+        2: 128_000,  # stereo
+        5: 192_000,  # 4.1, Alien 1978, 5-kanal
+        6: 320_000,  # 5.1
+        8: 448_000  # 7.1
     }
     if not ignore_bitrate:
         num_channels = get_channel_count(path)
