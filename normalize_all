@@ -15,4 +15,4 @@ max_threads=${1:-12}
 cpus=$(grep -c ^processor /proc/cpuinfo)
 threads=$([ $cpus -le "$max_threads" ] && echo "$cpus" || echo "$max_threads")
 
-find . -maxdepth 1 \( -iname "*.ogg" -o -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.m4a" -o -iname "*.opus" -o -iname "*.webm" \) -print0 | xargs -0 normalize.py -t $threads "${@:2}"
+find . -maxdepth 1 \( -iname "*.ogg" -o -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.m4a" -o -iname "*.opus" -o -iname "*.webm" \) -print0 | xargs -0 nice -n 20 normalize.py -t $threads "${@:2}"
