@@ -183,6 +183,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         2: 128_000,  # stereo
         5: 192_000,  # 4.1, Alien 1978, 5-kanal
         6: 320_000,  # 5.1
+        7: 384_000,  # 6.1
         8: 448_000,  # 7.1
     }
 
@@ -191,7 +192,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         audio_bitrate = bitrate_lut[num_channels]
         bitrate_list = ["-b:a", f"{audio_bitrate}"]
 
-    commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", "-strict -2"]
+    commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-ac {num_channels}"]
     print("    ", commands)
     try:
         with open(logfile_name, "w") as logfile:
