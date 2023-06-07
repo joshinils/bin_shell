@@ -117,8 +117,8 @@ def get_codec(path: pathlib.Path) -> str:
 
 
 def get_sample_rate(path: pathlib.Path) -> str:
-    if override_codec == "opus":
-        return "48000"  # best for opus, can not be something else
+    if override_codec == "libopus":
+        return "48000"  # best for libopus, can not be something else
 
     commands = ["ffprobe", "-v", "error", "-select_streams", "a", "-of", "default=noprint_wrappers=1:nokey=1", "-show_entries", "stream=sample_rate", f"{path}"]
 
@@ -185,11 +185,11 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         6: 320_000,  # 5.1
         8: 448_000,  # 7.1
     }
-    layout_name_lut = {
-        5: "4.1",  # Alien 1978, 5-kanal
-        6: "5.1",
-        8: "7.1",
-    }
+    # layout_name_lut = {
+    #     5: "4.1",  # Alien 1978, 5-kanal
+    #     6: "5.1",
+    #     8: "7.1",
+    # }
     num_channels = get_channel_count(path)
     if not ignore_bitrate:
         audio_bitrate = bitrate_lut[num_channels]
@@ -197,9 +197,11 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
 
     pre_filter = []
     if num_channels > 2:
-        pre_filter = ["--pre-filter", f"channelmap=channel_layout={layout_name_lut[num_channels]}"]
+        # pre_filter = ["--pre-filter", f"channelmap=channel_layout={layout_name_lut[num_channels]}"]
+        pass
 
     commands = ["ffmpeg-normalize"] + pre_filter + ["-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", "-strict -2"]
+    # commands = ["ffmpeg-normalize"] + pre_filter + ["-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-strict -2 -mapping_family 1 -ac {num_channels}"]
     print("    ", commands)
     try:
         with open(logfile_name, "w") as logfile:
@@ -239,7 +241,7 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
 
 def mkvmerge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio: List[pathlib.Path]) -> None:
     video_out_name = video_path.name
-    if override_codec != "opus":
+    if override_codec != "libopus":
         name_parts = video_path.name.split(".")
         last_part = name_parts.pop()
         video_out_name = f"""{".".join(name_parts)} ({override_codec}).{last_part}"""
@@ -342,7 +344,7 @@ max_threads: int
 
 
 def main():
-    parser = argparse.ArgumentParser(description='normalizes a movie file, each audio track by itself, encodes to opus with bitrates for channel layouts - 2ch = 128 kb/s, 5.1 = 320 kb/s, 7.1 = 448 kb/s')
+    parser = argparse.ArgumentParser(description='normalizes a movie file, each audio track by itself, encodes to libopus with bitrates for channel layouts - 2ch = 128 kb/s, 5.1 = 320 kb/s, 7.1 = 448 kb/s')
 
     parser.add_argument(
         "paths",
@@ -357,9 +359,9 @@ def main():
         "--force_codec",
         required=False,
         type=str,
-        default="opus",
+        default="libopus",
         metavar="codec",
-        help="default opus, with bitrates for opus",
+        help="default libopus, with bitrates for libopus",
     )
 
     parser.add_argument(
