@@ -110,21 +110,21 @@ def main():
             continue
         to_keep.append(name)
 
-    filemeta_data = pickle_load_filemeta()
+    filemeta_data_old = pickle_load_filemeta()
 
-    keep_file_meta = {}
-    for filename, meta_tuple in filemeta_data.items():
+    filemeta_data = {}
+    for filename, meta_tuple in filemeta_data_old.items():
         if filename in to_keep:
-            keep_file_meta[filename] = meta_tuple
+            filemeta_data[filename] = meta_tuple
 
     streams_size_name = []
     for name in to_keep:
-        if name not in keep_file_meta:
-            keep_file_meta[name] = (get_amount_of_audio_streams(name), os.path.getsize(name))
-        stream_count, filesize = keep_file_meta.get(name)
+        if name not in filemeta_data:
+            filemeta_data[name] = (get_amount_of_audio_streams(name), os.path.getsize(name))
+        stream_count, filesize = filemeta_data.get(name)
         streams_size_name.append((stream_count, filesize, name))
 
-    pickle_save_filemeta(keep_file_meta)
+    pickle_save_filemeta(filemeta_data)
 
     streams_size_name.sort(key=lambda x: x[1], reverse=False)
     streams_size_name.sort(key=lambda x: x[0], reverse=False)
