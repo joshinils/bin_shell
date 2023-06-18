@@ -71,7 +71,7 @@ def pickle_load_filemeta() -> Dict[str, Tuple[int, int]]:
 
 
 def pickle_save_filemeta(metadata: Dict[str, Tuple[int, int]]) -> None:
-    total_streams_path = pathlib.Path("total_streams_remaining.txt")
+    total_streams_path = pathlib.Path(".total_streams_remaining.txt")
     if not metadata:
         try:
             pickled_filename.unlink()

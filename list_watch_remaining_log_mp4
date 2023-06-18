@@ -43,8 +43,8 @@ fi
 
 if [ $waiting -gt 0 ] ; then
     streams_waiting=""
-    if [ -f "total_streams_remaining.txt" ]; then
-        streams_waiting=" | $(cat "total_streams_remaining.txt")S"
+    if [ -f ".total_streams_remaining.txt" ]; then
+        streams_waiting=" | $(cat ".total_streams_remaining.txt")S"
     fi
 
     echo "$waiting Wait = $(echo "scale=2; 100 * $waiting / $total" | bc ) %$streams_waiting"|figlet -kct -f standard
