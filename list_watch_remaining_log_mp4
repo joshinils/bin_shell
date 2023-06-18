@@ -88,7 +88,7 @@ function print_folder_content_2()
                 size_bytes=$(stat -c "%s" "$filename")
                 size_human=$(echo $size_bytes | numfmt --to=iec)
                 echo -e "$name\t$size_human\t$size_bytes"
-            done | column -t -s $'\t'
+            done | sed -e 's/ü/u/g' -e 's/ö/o/g' -e 's/ä/a/g' -e 's/ß/S/g' -e 's/Ü/U/g' -e 's/Ö/O/g' -e 's/Ä/A/g' | column -t -s $'\t'
         else
             echo "$1: empty"
         fi
