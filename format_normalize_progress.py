@@ -169,6 +169,10 @@ def main() -> None:
         it_s_it: str
         title: str
 
+        if len(matches) < 1:
+            print(line)
+            continue
+
         stream_or_passes, stream_current_str, stream_total_str, percent_done_str, percent_total_str, time_elapsed_str, time_remaining_str, iteration_time_str, it_s_it, title, *_ = matches[0]
 
         try:
