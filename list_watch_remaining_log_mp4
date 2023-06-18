@@ -43,8 +43,8 @@ fi
 
 if [ $waiting -gt 0 ] ; then
     streams_waiting=""
-    if [ -f "total_streams_remaining.txt" ]; then
-        streams_waiting=" | $(cat "total_streams_remaining.txt")S"
+    if [ -f ".total_streams_remaining.txt" ]; then
+        streams_waiting=" | $(cat ".total_streams_remaining.txt")S"
     fi
 
     echo "$waiting Wait = $(echo "scale=2; 100 * $waiting / $total" | bc ) %$streams_waiting"|figlet -kct -f standard
@@ -56,7 +56,7 @@ if [ $total -gt 0 ] ; then
 fi
 
 width=$(echo $COLUMNS / 2 | bc)
-var="list_watch_remaining_output"
+var=".list_watch_remaining_output"
 rm -f $var
 touch $var
 find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
