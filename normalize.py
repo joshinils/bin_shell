@@ -292,6 +292,8 @@ def mkvmerge_normalized_with_video_subs(video_path: pathlib.Path, normalized_aud
 def extract_normalize_merge_all(paths: List[pathlib.Path]) -> None:
     path_streams = []
     for path in paths:
+        if skip_dot_working and make_lockfile_name(path).is_file():
+            continue
         path_streams.append((path, get_amount_of_audio_streams(path), path.stat().st_size))
 
     path_streams.sort(key=lambda x: x[2], reverse=True)
@@ -333,6 +335,9 @@ no_overwrite_intermediary: bool
 global max_threads
 max_threads: int
 
+global skip_dot_working
+skip_dot_working: bool
+
 
 def main():
     parser = argparse.ArgumentParser(description='normalizes a movie file, each audio track by itself, encodes to libopus with bitrates for channel layouts - 2ch = 128 kb/s, 5.1 = 320 kb/s, 7.1 = 448 kb/s')
@@ -368,13 +373,20 @@ def main():
     parser.add_argument(
         "-nb",
         "--ignore_bitrate",
-        action="store_true"
+        action="store_true",
     )
 
     parser.add_argument(
         "-n",
         "--no_overwrite_intermediary",
-        action="store_true"
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "-w",
+        "--skip_dot_working",
+        action="store_true",
+        help="skip, if a *.working file exists",
     )
 
     args = parser.parse_args()
@@ -402,6 +414,9 @@ def main():
 
     global max_threads
     max_threads = args.max_threads
+
+    global skip_dot_working
+    skip_dot_working = args.skip_dot_working
 
     rmdir(normalized_temp_single)
     rmdir(normalized_staging)
