@@ -13,4 +13,4 @@ if (( $src_space >= $dst_space )); then
     exit 1
 fi
 
-tar cf - $1 | pv -pteIbar -i 0.1 -s $src_space | (cd $2 && tar --warning=no-timestamp -xf -)
+tar cf - "${1}" | pv -pteIbar -i 0.1 -s $src_space | (cd "${2}" && tar --warning=no-timestamp -xf -)
