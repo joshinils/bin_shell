@@ -2,8 +2,8 @@
 
 mkdir $2 -p
 
-src_space=$(du $1 -s --block-size 1|cut -f1)
-dst_space=$(df -P $2 --block-size 1| awk 'NR==2 {print $4}')
+src_space=$(du "${1}" -s --block-size 1|cut -f1)
+dst_space=$(df -P "${2}" --block-size 1| awk 'NR==2 {print $4}')
 
 if (( $src_space >= $dst_space )); then
     echo "destination may not be big enough:"
