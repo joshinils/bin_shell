@@ -52,6 +52,8 @@ def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
             stderr=subprocess.PIPE
         )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
+        if sub_process_std_out.rstrip() == "":
+            return 0
         return len(sub_process_std_out.rstrip().split("\n"))
     except Exception as e:
         print(print_lineno(), type(e), e)
@@ -192,7 +194,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         audio_bitrate = bitrate_lut[num_channels]
         bitrate_list = ["-b:a", f"{audio_bitrate}"]
 
-    commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-ac {num_channels}"]
+    commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-ac {num_channels} -dsurex_mode 1"]
     print("    ", commands)
     try:
         with open(logfile_name, "w") as logfile:
@@ -226,6 +228,8 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
     with open(make_lockfile_name(path_number[0]), "w"):
         pass
     audio_path = extract_audio_stream(path_number)
+    if extract_only:
+        return (None, None)
     normalized_path = normalize(audio_path)
     return (normalized_path, path_number[0])
 
@@ -338,6 +342,9 @@ max_threads: int
 global skip_dot_working
 skip_dot_working: bool
 
+global extract_only
+extract_only: bool
+
 
 def main():
     parser = argparse.ArgumentParser(description='normalizes a movie file, each audio track by itself, encodes to libopus with bitrates for channel layouts - 2ch = 128 kb/s, 5.1 = 320 kb/s, 7.1 = 448 kb/s')
@@ -389,6 +396,13 @@ def main():
         help="skip, if a *.working file exists",
     )
 
+    parser.add_argument(
+        "-x",
+        "--extract_only",
+        action="store_true",
+        help="exit after extracting audio",
+    )
+
     args = parser.parse_args()
 
     input_paths: List[pathlib.Path] = [pathlib.Path(p) for p in args.paths]
@@ -417,6 +431,9 @@ def main():
 
     global skip_dot_working
     skip_dot_working = args.skip_dot_working
+
+    global extract_only
+    extract_only = args.extract_only
 
     rmdir(normalized_temp_single)
     rmdir(normalized_staging)
