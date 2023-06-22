@@ -223,10 +223,10 @@ def make_lockfile_name(path: pathlib.Path) -> pathlib.Path:
 
 def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> Tuple[Optional[pathlib.Path], Optional[pathlib.Path]]:
     if not path_number[0].exists():
+        (make_lockfile_name(path_number[0]) / ".not_found").touch()
         return (None, None)
 
-    with open(make_lockfile_name(path_number[0]), "w"):
-        pass
+    make_lockfile_name(path_number[0]).touch()
     audio_path = extract_audio_stream(path_number)
     if extract_only:
         return (None, None)
