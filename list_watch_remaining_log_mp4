@@ -70,13 +70,7 @@ rm -f $var
 echo -e " "
 
 echo $PWD
-echo
-
 screen -ls
-
-normalize_remaining_print.py
-echo
-
 
 function print_folder_content_2()
 {
@@ -96,8 +90,12 @@ function print_folder_content_2()
     fi
 }
 
-print_folder_content_2 "normalized"
 print_folder_content_2 "normalized_staging"
-print_folder_content_2 "normalized_done"
+
+normalize_remaining_print.py
+echo
+
+print_folder_content_2 "normalized"
 print_folder_content_2 "normalized_temp"
 print_folder_content_2 "normalized_temp_single"
+print_folder_content_2 "normalized_done"
