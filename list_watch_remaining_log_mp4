@@ -67,35 +67,10 @@ done
 export LC_ALL=C
 cat $var | sed 'h;s/\x1b[[0-9;]*m//g;s/▏/ /g;s/▎/ /g;s/▍/ /g;s/▌/ /g;s/▋/ /g;s/▊/ /g;s/▉/ /g;s/█/ /g;G;s/\n/\t/' | sort | cut -f2-  # https://stackoverflow.com/a/29401114
 rm -f $var
-echo -e " "
 
 echo $PWD
 screen -ls
 
-function print_folder_content_2()
-{
-    if [ -d "$1" ]; then
-        if [ $(ls "$1"|wc -l) -gt 0 ] ; then
-            echo "$1: $(ls $1 | wc -l)"
-            find "$1"/* -maxdepth 0 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.MOV" -o -name "*.mov" \) -print0 | while IFS= read -r -d '' filename; do
-                name=$(basename "$filename")
-                size_bytes=$(stat -c "%s" "$filename")
-                size_human=$(echo $size_bytes | numfmt --to=iec)
-                echo -e "$name\t$size_human\t$size_bytes"
-            done | sed -e 's/ü/u/g' -e 's/ö/o/g' -e 's/ä/a/g' -e 's/ß/S/g' -e 's/Ü/U/g' -e 's/Ö/O/g' -e 's/Ä/A/g' | column -t -s $'\t'
-        else
-            echo "$1: empty"
-        fi
-        echo
-    fi
-}
-
-print_folder_content_2 "normalized_staging"
-
 normalize_remaining_print.py
-echo
 
-print_folder_content_2 "normalized"
-print_folder_content_2 "normalized_temp"
-print_folder_content_2 "normalized_temp_single"
-print_folder_content_2 "normalized_done"
+ls_multi_folder.py normalized normalized_done normalized_temp normalized_temp_single|column -t -s $'\t'
