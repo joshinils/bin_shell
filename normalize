@@ -14,7 +14,7 @@ if [ $extension = "ogg" ] || [ $extension = "m4a" ] || [ $extension = "opus" ] |
     echo "done running: ffmpeg-normalize -pr -f -ar  \"${sample_rate} \" --extension ogg -t -2 -nt peak --keep-loudness-range-target -c:a libvorbis  \"${1} \" -vn >>  \"${1} \".log 2>&1"
     rm "${1}".log
 else
-    normalize.py "$@" && mkdir normalized_done -p  # && mv -n "${1}" normalized_done
+    nice -n 20 normalize.py "${@}" && mkdir normalized_done -p  # && mv -n "${1}" normalized_done
     mv -n "${1%.*}"*.png normalized > /dev/null 2>&1
     echo "done running: normalize.py \"${1}\""
     # mv "${1}".log "${1}".log.done
