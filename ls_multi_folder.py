@@ -3,7 +3,7 @@ import os
 import pathlib
 import subprocess
 import sys
-from typing import List, Set
+from typing import List, Set, Tuple
 
 
 def print_folder_content(folder):
@@ -28,37 +28,42 @@ def print_folder_content(folder):
 
 def print_folders_contents(folders: List[str]):
     filenames_superset: Set[str] = set()
-    filecount_each = dict()
+    filecount_each: List[Tuple[str, int]] = []
     for folder in folders:
-        filecount_each[folder] = 0
+        filecount = 0
         if os.path.isdir(folder):
             for root, dirs, filenames in os.walk(folder):
                 for filename in filenames:
                     ext: str = os.path.splitext(filename)[1]
                     if ext.lower() in ['.mp4', '.mkv', '.mov']:
-                        filecount_each[folder] += 1
+                        filecount += 1
                         filenames_superset.add(filename.replace(".normalized.mkv", ""))
+        filecount_each.append((folder, filecount))
 
     # for file in filenames_superset:
     #     print(file)
     # exit()
 
     if len(filenames_superset) == 0:
-        print(f"{folder}: empty")
+        print(f"{': empty, '.join(folders)}: empty")
         return
+
+    filecount_each.sort(key=lambda x: x[1], reverse=True)
 
     foldername: str
     folder_counts = "\t"
-    for foldername, count in filecount_each.items():
+    for foldername, count in filecount_each:
         foldername = str(foldername).replace("normalized_", "")
         folder_counts += f"{foldername}\t{count}\t"
     print(folder_counts)
+
+    filecount_each = [(file, count) for file, count in filecount_each if count > 0]  # do not print dots for empty dir
 
     for file in sorted(filenames_superset):
         name = os.path.basename(file)
         output = f"{name}"
         # print(file)
-        for folder in folders:
+        for folder, count in filecount_each:
             file_name = folder + os.sep + name
             # print(file_name, folder, name)
             if not pathlib.Path(file_name).is_file():
