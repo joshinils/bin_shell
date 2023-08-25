@@ -73,4 +73,4 @@ screen -ls
 
 normalize_remaining_print.py
 
-ls_multi_folder.py normalized normalized_done normalized_temp normalized_temp_single|column -t -s $'\t'
+ls_multi_folder.py normalized normalized_done normalized_staging normalized_temp normalized_temp_single|column -t -s $'\t'
