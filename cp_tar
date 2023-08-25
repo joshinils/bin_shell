@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-mkdir $2 -p
+mkdir "${2}" -p
 
 src_space=$(du "${1}" -s --block-size 1|cut -f1)
 dst_space=$(df -P "${2}" --block-size 1| awk 'NR==2 {print $4}')

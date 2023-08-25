@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+trap kill_sem INT
+
+function kill_sem() {
+    for s in ~/.parallel/semaphores/id-$$/*@*;
+    do
+        kill -15 -- -$(basename ${s%%@*})
+    done
+}
+
+find * -maxdepth 0 -type f -name "*.rar" -print0 | while IFS= read -r -d '' file; do
+    echo "file = $file"
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) "unrar x \"${file}\" && trash-put \"${file}\""
+done
+find * -maxdepth 0 -type f \( -name "*.zip" -o -name "*.air" \) -print0 | while IFS= read -r -d '' file; do
+    echo "file = $file"
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) "unzip \"${file}\" -d \"${file}.d\" && trash-put \"${file}\""
+done
+find * -maxdepth 0 -type f \( -name "*.iso" -o -name "*.dmg" \) -print0 | while IFS= read -r -d '' file; do
+    echo "file = $file"
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) "7z x \"${file}\" -o\"${file}.d\" && trash-put \"${file}\""
+done
+find * -maxdepth 0 -type f -iname "*.cab" -print0 | while IFS= read -r -d '' file; do
+    echo "file = $file"
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) "cabextract \"${file}\" -d \"${file}.d\" && trash-put \"${file}\""
+done
+find * -maxdepth 0 -type f -name "*.emz" -print0 | while IFS= read -r -d '' file; do
+    echo "file = $file"
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) "zcat \"${file}\" > \"${file}\".emf && trash-put \"${file}\""
+done
+find * -maxdepth 0 -type f -name "*.gz" -print0 | while IFS= read -r -d '' file; do
+    echo "file = $file"
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) "gzip -d \"${file}\""
+done
+find * -maxdepth 0 -type f -name "*.tar" -print0 | while IFS= read -r -d '' file; do
+    echo "file = $file"
+    sem --id $$ --lb -j $(grep -c ^processor /proc/cpuinfo) "tar -xf \"${file}\" && trash-put \"${file}\""
+done
+sem --id $$ --wait
+wait

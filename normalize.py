@@ -243,7 +243,7 @@ def mkvmerge_normalized_with_video_subs(video_path: pathlib.Path, normalized_aud
 
     out_name = normalized_staging / video_out_name
 
-    commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + normalized_audio
+    commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + sorted(normalized_audio)
     commands = [str(elem) for elem in commands]
     print("    ", commands)
 

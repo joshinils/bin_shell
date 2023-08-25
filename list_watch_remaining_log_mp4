@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 disc_free.py
+echo "waiting: $(find . -maxdepth 1 -type f \( -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.ogg" -o -iname "*.webm" -o -iname "*.opus" -o -iname "*.m4a" \) -exec du -cB GiB {} +| tail -n 1)"
 
 running=$(ls *.working 2>/dev/null|wc -l)
 norming=$(ls *.log 2>/dev/null|wc -l)
