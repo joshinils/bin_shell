@@ -6,7 +6,7 @@ import pathlib
 import subprocess
 import traceback
 from inspect import currentframe, getframeinfo
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import tqdm
 import yt_dlp
@@ -141,18 +141,23 @@ def get_download_ids(url: str) -> Tuple[List[Tuple[str, str]], str]:
         bestvideo_id = None
         bestvideo_note = None
         bestvideo_resolution = 0
+        format: Dict
         for format in formats:
             if format["audio_ext"] == "none":
+                if "width" not in format:
+                    continue
+                if "height" not in format:
+                    continue
                 width = format["width"]
                 height = format["height"]
                 resolution = width * height
                 if bestvideo_resolution < resolution:
                     bestvideo_resolution = resolution
                     bestvideo_id = format["format_id"]
-                    bestvideo_note = format["format_note"]
+                    bestvideo_note = format.get("format_note", "")
             else:
                 format_id = format["format_id"]
-                format_note = format["format_note"]
+                format_note = format.get("format_note", "")
                 downloadable.append((format_id, format_note))
         downloadable.append((bestvideo_id, bestvideo_note))
     return downloadable, info["title"]
