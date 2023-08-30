@@ -160,7 +160,17 @@ def get_download_ids(url: str) -> Tuple[List[Tuple[str, str]], str]:
                 format_note = format.get("format_note", "")
                 downloadable.append((format_id, format_note))
         downloadable.append((bestvideo_id, bestvideo_note))
-    return downloadable, info["title"]
+
+    title = info["title"]
+    extractor = info.get("extractor")
+    extractor_key = info.get("extractor_key")
+
+    if extractor and extractor_key:
+        title += f" - {extractor}-{extractor_key} Mediathek"
+    elif extractor or extractor_key:
+        title += f" - {extractor or extractor_key} Mediathek"
+
+    return downloadable, title
 
 
 def main(url: str) -> None:
