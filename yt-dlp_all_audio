@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+
+import argparse
+import multiprocessing as mp
+import pathlib
+import subprocess
+import traceback
+from inspect import currentframe, getframeinfo
+from typing import List, Tuple
+
+import tqdm
+import yt_dlp
+
+
+def print_lineno() -> str:
+    cf = currentframe()
+    return f"{getframeinfo(cf).filename}:{cf.f_back.f_lineno}"
+
+
+def mkvmerge(files: List[str], out_name) -> str:
+    commands = ["mkvmerge", "-v", "-o", out_name] + files
+
+    try:
+        sub_process_result = subprocess.run(
+            commands,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        status_ok = sub_process_result.returncode == 0
+        warning = sub_process_result.returncode == 1
+        error = sub_process_result.returncode != 0 and sub_process_result.returncode != 1
+
+        if not status_ok:
+            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
+            sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
+            print(print_lineno(), f"{sub_process_result.returncode=}")
+
+            if warning:
+                sub_process_std_err = sub_process_std_err.replace("\\n", "warning:    \n")
+                sub_process_std_out = sub_process_std_out.replace("\\n", "warning:    \n")
+                print(print_lineno(), f"\nwarning:    {sub_process_std_out=}")
+                print(print_lineno(), f"\nwarning:    {sub_process_std_err=}")
+
+            if error:
+                print(print_lineno(), f"{sub_process_std_out=}")
+                print(print_lineno(), f"{sub_process_std_err=}")
+                exit(3)
+    except Exception as e:
+        print(traceback.print_exc())
+        print(type(e), e)
+        exit(2)
+
+    for path in files:
+        pathlib.Path(path).unlink()
+
+    return out_name
+
+
+def set_track_title(temp_name: str, out_name: str, title: str) -> str:
+    commands = ['mkvmerge', '-v', '-o', out_name, '--track-name', f'0:{title}', temp_name]
+
+    try:
+        sub_process_result = subprocess.run(
+            commands,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        status_ok = sub_process_result.returncode == 0
+        warning = sub_process_result.returncode == 1
+        error = sub_process_result.returncode != 0 and sub_process_result.returncode != 1
+
+        if not status_ok:
+            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
+            sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
+            print(print_lineno(), f"{sub_process_result.returncode=}")
+
+            if warning:
+                sub_process_std_err = sub_process_std_err.replace("\\n", "warning:    \n")
+                sub_process_std_out = sub_process_std_out.replace("\\n", "warning:    \n")
+                print(print_lineno(), f"\nwarning:    {sub_process_std_out=}")
+                print(print_lineno(), f"\nwarning:    {sub_process_std_err=}")
+
+            if error:
+                print(print_lineno(), f"{sub_process_std_out=}")
+                print(print_lineno(), f"{sub_process_std_err=}")
+                exit(3)
+    except Exception as e:
+        print(traceback.print_exc())
+        print(type(e), e)
+        exit(2)
+
+    pathlib.Path(temp_name).unlink()
+    return out_name
+
+
+def download_format_wrap(args: Tuple[Tuple[str, str], str, str]) -> str:
+    format_tuple, url, title = args
+    return download_format(format_tuple, url, title)
+
+
+def download_format(format_tuple: Tuple[str, str], url: str, title: str) -> str:
+    format, track_title = format_tuple
+    out_name = f"{title}.{format}.mkv"
+    temp_name = out_name + "_plain.mkv"
+    ydl_opts = {
+        'ignoreerrors': True,
+        'format': format,
+        'outtmpl': temp_name,
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        error_code = ydl.download([url])
+        print(error_code)
+
+    return set_track_title(temp_name, out_name, track_title)
+
+
+def download_subs(url: str, title: str) -> None:
+    ydl_opts = {
+        'ignoreerrors': True,
+        'writesubtitles': True,
+        'allsubtitles': True,
+        'skip_download': True,
+        'outtmpl': title,
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        error_code = ydl.download([url])
+        print(error_code)
+
+
+def get_download_ids(url: str) -> Tuple[List[Tuple[str, str]], str]:
+    ydl_opts = {}
+    downloadable = []
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+
+        # ℹ️ ydl.sanitize_info makes the info json-serializable
+        info = ydl.sanitize_info(info)
+        formats = info["formats"]
+        bestvideo_id = None
+        bestvideo_note = None
+        bestvideo_resolution = 0
+        for format in formats:
+            if format["audio_ext"] == "none":
+                width = format["width"]
+                height = format["height"]
+                resolution = width * height
+                if bestvideo_resolution < resolution:
+                    bestvideo_resolution = resolution
+                    bestvideo_id = format["format_id"]
+                    bestvideo_note = format["format_note"]
+            else:
+                format_id = format["format_id"]
+                format_note = format["format_note"]
+                downloadable.append((format_id, format_note))
+        downloadable.append((bestvideo_id, bestvideo_note))
+    return downloadable, info["title"]
+
+
+def main(url: str) -> None:
+    formats, title = get_download_ids(url)
+    download_subs(url, title)
+
+    tasks = []
+    for format in formats:
+        tasks.append((format, url, title))
+
+    downloaded_names = []
+    with mp.Pool(processes=8) as mp_pool_download:
+        results = mp_pool_download.imap_unordered(download_format_wrap, tasks)
+        mp_pool_download.close()
+
+        for filepath in tqdm.tqdm(results, total=len(tasks), dynamic_ncols=True, unit="download"):
+            downloaded_names.append(filepath)
+        mp_pool_download.join()
+
+    mkvmerge(downloaded_names, f"{title}.mkv")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Use yt-dlp to download movie from e.g. Arte with all languages, subtitles, then use mkvmerge them and set the audio track name')
+
+    parser.add_argument(
+        "url",
+        type=str,
+        help='url of the video',
+        metavar="url",
+    )
+
+    args = parser.parse_args()
+
+    url: int = args.url
+    main(url)
