@@ -293,8 +293,8 @@ def mkvmerge_normalized_with_video_subs(video_path: pathlib.Path, normalized_aud
     make_lockfile_name(video_path).unlink()
 
 
-def extract_normalize_merge_all(paths: List[pathlib.Path]) -> None:
-    path_streams = []
+def extract_normalize_merge_all(paths: List[pathlib.Path], reverse_order: bool = False, do_count: Optional[int] = None) -> None:
+    path_streams: List[Tuple[pathlib.Path, int, int]] = []
     for path in paths:
         if skip_dot_working and make_lockfile_name(path).is_file():
             continue
@@ -309,6 +309,13 @@ def extract_normalize_merge_all(paths: List[pathlib.Path]) -> None:
         dict_orig_normed_counts[path] = {"done": [], "count": audio_stream_count}
         for audio_stream in range(audio_stream_count):
             tasks.append((path, audio_stream))
+
+    if reverse_order:
+        # make a list because:
+        # TypeError: 'list_reverseiterator' object is not subscriptable
+        tasks = list(reversed(tasks))
+
+    tasks = tasks[:do_count]  # only process first n tasks
 
     with mp.Pool() as mp_pool_merge:
         with mp.Pool(processes=max_threads) as mp_pool_extract_norm:
@@ -403,6 +410,22 @@ def main():
         help="exit after extracting audio",
     )
 
+    parser.add_argument(
+        "-r",
+        "--reverse_order",
+        action="store_true",
+        help="start with smallest file first.",
+    )
+
+    parser.add_argument(
+        "-c",
+        "--count_first_n",
+        default=None,
+        type=int,
+        metavar="n",
+        help="process at most the first n streams of sorted inputs, not necessarily all, not even all of one single file.",
+    )
+
     args = parser.parse_args()
 
     input_paths: List[pathlib.Path] = [pathlib.Path(p) for p in args.paths]
@@ -440,7 +463,10 @@ def main():
     rmdir(normalized_output)
     rmdir(normalized_done)
 
-    extract_normalize_merge_all(paths)
+    do_count = args.count_first_n
+    reverse_order = args.reverse_order
+
+    extract_normalize_merge_all(paths, reverse_order, do_count)
 
 
 if __name__ == "__main__":
