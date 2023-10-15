@@ -111,7 +111,7 @@ def trunc_filename(filename: str) -> str:
         filename = filename.replace(f".{ext}.audio-", " #")
         filename = filename.replace(" #0", " # ")
         filename = filename.replace(" # 0", " #  ")
-
+        filename = filename.replace("Link to makeMKV_out", ".")
     return filename
 
 
@@ -156,7 +156,8 @@ def main() -> None:
     regex = re.compile(reg_str)
 
     for line in sys.stdin:
-        matches = regex.findall(line)
+        foo = line.replace("Link to makeMKV_out", ".")
+        matches = regex.findall(foo)
 
         stream_or_passes: str
         stream_current_str: str
@@ -231,13 +232,13 @@ def main() -> None:
         width, height = shutil.get_terminal_size((80, 20))
 
         filenames = next(os.walk(os.getcwd()), (None, None, []))[2]  # [] if no file
+        filenames_mkv = next(os.walk(os.getcwd() + os.sep + "Link to makeMKV_out"), (None, None, []))[2]  # [] if no file
 
         name_length = 0
-        for name in filenames:
+        for name in filenames + filenames_mkv:
             if not name.endswith(".log"):
                 continue
             name_length = max(name_length, len(trunc_filename(name)))
-
         bar_width = width - name_length - 37  # TODO: CHECK IF RIGHT?
 
         percentage_bar = get_percentage_bar(total_percent, bar_width, stream_current, stream_total)
