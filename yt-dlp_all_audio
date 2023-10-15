@@ -165,6 +165,9 @@ def get_download_ids(url: str) -> Tuple[List[Tuple[str, str]], str]:
     extractor = info.get("extractor")
     extractor_key = info.get("extractor_key")
 
+    if extractor == extractor_key:
+        extractor_key = ""
+
     if extractor and extractor_key:
         title += f" - {extractor}-{extractor_key} Mediathek"
     elif extractor or extractor_key:
