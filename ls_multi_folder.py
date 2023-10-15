@@ -38,6 +38,7 @@ def print_folders_contents(folders: List[str]):
                     if ext.lower() in ['.mp4', '.mkv', '.mov']:
                         filecount += 1
                         filenames_superset.add(filename.replace(".normalized.mkv", ""))
+                break  # do not descent into next subfolders
         filecount_each.append((folder, filecount))
 
     # for file in filenames_superset:
