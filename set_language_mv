@@ -29,5 +29,10 @@ fi
 
 wait
 
+bn="$(basename "${1/.mkv/}")"
+# echo $bn
+find . -name "$bn*.vtt" -exec mv -vn {} /media/wd4-r1/data/filme_neu/ok_subtitles \;
+find . -name "$bn*.srt" -exec mv -vn {} /media/wd4-r1/data/filme_neu/ok_subtitles \;
+touch "${1}"_moved_away
 mv -vn "${1}" /media/wd4-r1/data/filme_neu/ok_subtitles
 /media/wd4-r1/data/filme_neu/mv_ok_subtitles.sh
