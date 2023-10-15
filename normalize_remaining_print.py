@@ -95,6 +95,10 @@ def pickle_save_filemeta(metadata: Dict[str, Tuple[int, int]]) -> None:
 
 def main():
     filenames = next(os.walk(os.getcwd()), (None, None, []))[2]  # [] if no file
+    filenames_mkv = next(os.walk(os.getcwd() + os.sep + "Link to makeMKV_out"), (None, None, []))[2]  # [] if no file
+
+    for name in filenames_mkv:
+        filenames.append("Link to makeMKV_out/" + name)
 
     # print()
     to_remove = []
@@ -131,7 +135,7 @@ def main():
     if len(streams_size_name) > 0:
         print("Waiting:")
         for stream_count, size, name in streams_size_name:
-            print(f"{stream_count:2d}, {make_size_str(size)}, {name}")
+            print(f"{stream_count:2d}, {make_size_str(size)}, {name.replace('Link to makeMKV_out/', '')}")
     else:
         print("Waiting: None")
 
