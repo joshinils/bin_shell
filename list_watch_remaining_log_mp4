@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 
 disc_free.py
-echo "waiting: $(find . -maxdepth 1 -type f \( -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.ogg" -o -iname "*.webm" -o -iname "*.opus" -o -iname "*.m4a" \) -exec du -cB GiB {} +| tail -n 1)"
+echo "waiting: $(find . "Link to makeMKV_out"/ -maxdepth 1 -type f \( -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.ogg" -o -iname "*.webm" -o -iname "*.opus" -o -iname "*.m4a" \) -exec du -cB GiB {} + 2> /dev/null| tail -n 1)"
 
-running=$(ls *.working 2>/dev/null|wc -l)
-norming=$(ls *.log 2>/dev/null|wc -l)
+running=$(ls *.working Link\ to\ makeMKV_out/*.working 2>/dev/null|wc -l)
+norming=$(ls *.log Link\ to\ makeMKV_out/*.log 2>/dev/null|wc -l)
 
-remaining_mp4=$(ls *.mp4 2>/dev/null|wc -l)
-remaining_mkv=$(ls *.mkv 2>/dev/null|wc -l)
-remaining_ogg=$(ls *.ogg 2>/dev/null|wc -l)
-remaining_webm=$(ls *.webm 2>/dev/null|wc -l)
-remaining_opus=$(ls *.opus 2>/dev/null|wc -l)
-remaining_m4a=$(ls *.m4a 2>/dev/null|wc -l)
+remaining_mp4=$(ls *.mp4 Link\ to\ makeMKV_out/*.mp4 2>/dev/null|wc -l)
+remaining_mkv=$(ls *.mkv Link\ to\ makeMKV_out/*.mkv 2>/dev/null|wc -l)
+remaining_ogg=$(ls *.ogg Link\ to\ makeMKV_out/*.ogg 2>/dev/null|wc -l)
+remaining_webm=$(ls *.webm Link\ to\ makeMKV_out/*.webm 2>/dev/null|wc -l)
+remaining_opus=$(ls *.opus Link\ to\ makeMKV_out/*.opus 2>/dev/null|wc -l)
+remaining_m4a=$(ls *.m4a Link\ to\ makeMKV_out/*.m4a 2>/dev/null|wc -l)
 remaining=$(($remaining_mp4 + $remaining_mkv + $remaining_ogg + $remaining_webm + $remaining_opus + $remaining_m4a))
 
-done_mp4=$(ls normalized/*.mp4 2>/dev/null|wc -l)
-done_mkv=$(ls normalized/*.mkv 2>/dev/null|wc -l)
-done_ogg=$(ls normalized/*.ogg 2>/dev/null|wc -l)
-done_webm=$(ls normalized/*.webm 2>/dev/null|wc -l)
-done_opus=$(ls normalized/*.opus 2>/dev/null|wc -l)
-done_m4a=$(ls normalized/*.m4a 2>/dev/null|wc -l)
+done_mp4=$(ls normalized/*.mp4 Link\ to\ makeMKV_out/normalized/*.mp4 2>/dev/null|wc -l)
+done_mkv=$(ls normalized/*.mkv Link\ to\ makeMKV_out/normalized/*.mkv 2>/dev/null|wc -l)
+done_ogg=$(ls normalized/*.ogg Link\ to\ makeMKV_out/normalized/*.ogg 2>/dev/null|wc -l)
+done_webm=$(ls normalized/*.webm Link\ to\ makeMKV_out/normalized/*.webm 2>/dev/null|wc -l)
+done_opus=$(ls normalized/*.opus Link\ to\ makeMKV_out/normalized/*.opus 2>/dev/null|wc -l)
+done_m4a=$(ls normalized/*.m4a Link\ to\ makeMKV_out/normalized/*.m4a 2>/dev/null|wc -l)
 done_count=$(($done_mp4 + $done_mkv + $done_ogg + $done_webm + $done_opus + $done_m4a))
 
 total=$(echo $done_count + $remaining|bc)
@@ -60,7 +60,7 @@ width=$(echo $COLUMNS / 2 | bc)
 var=".list_watch_remaining_output"
 rm -f $var
 touch $var
-find . -maxdepth 1 \( -name "*.log" \) | while read fname; do
+find . "Link to makeMKV_out"/ -maxdepth 1 \( -name "*.log" \) 2> /dev/null | while read fname; do
     tail_log=$(tail -n 1 "${fname}" | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g")
     echo "$tail_log ${fname}"|format_normalize_progress.py >> $var
 done
