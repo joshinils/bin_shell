@@ -60,9 +60,7 @@ def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
         return None
 
 
-def extract_audio_stream(path_number: Tuple[pathlib.Path, int]) -> pathlib.Path:
-    path = path_number[0]
-    stream_number = path_number[1]
+def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path:
     normalized_temp_single.mkdir(exist_ok=True)
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp_single / path.name}.audio-{stream_number:03}.mkv")
     overwrite = "-n" if no_overwrite_intermediary else "-y"
@@ -217,21 +215,34 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         exit(2)
 
 
-def make_lockfile_name(path: pathlib.Path) -> pathlib.Path:
-    return pathlib.Path(str(path) + ".working")
+def make_lockfile_name(path: pathlib.Path, number: Optional[int] = None) -> pathlib.Path:
+    if number is None:
+        return pathlib.Path(str(path) + ".working")
+    return pathlib.Path(f"{path}_{number:03d}.working")
 
 
 def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> Tuple[Optional[pathlib.Path], Optional[pathlib.Path]]:
-    if not path_number[0].exists():
-        pathlib.Path(f"{make_lockfile_name(path_number[0])}.not_found").touch()
+    path: pathlib.Path
+    number: int
+    path, number = path_number
+    if not path.exists():
+        pathlib.Path(f"{make_lockfile_name(path)}.not_found").touch()
         return (None, None)
 
-    make_lockfile_name(path_number[0]).touch()
-    audio_path = extract_audio_stream(path_number)
+    lock_file_single = make_lockfile_name(path, number)
+    if not lock_file_single.exists():
+        lock_file_single.touch()
+    else:
+        return (None, None)
+
+    audio_path = extract_audio_stream(path, number)
     if extract_only:
+        lock_file_single.unlink()
         return (None, None)
     normalized_path = normalize(audio_path)
-    return (normalized_path, path_number[0])
+
+    lock_file_single.unlink()
+    return (normalized_path, path)
 
 
 def mkvmerge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio: List[pathlib.Path]) -> None:
