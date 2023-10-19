@@ -181,6 +181,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
     bitrate_lut = {
         1:  64_000,  # noqa: E241  # mono
         2: 128_000,  # stereo
+        3: 160_000,  # 3.0  # 32 * 5 eh, ffs
         5: 192_000,  # 4.1, Alien 1978, 5-kanal
         6: 320_000,  # 5.1
         7: 384_000,  # 6.1
@@ -223,19 +224,19 @@ def make_lockfile_name(path: pathlib.Path, number: Optional[int] = None) -> path
 
 def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> Tuple[Optional[pathlib.Path], Optional[pathlib.Path]]:
     path: pathlib.Path
-    number: int
-    path, number = path_number
+    stream_number: int
+    path, stream_number = path_number
     if not path.exists():
         pathlib.Path(f"{make_lockfile_name(path)}.not_found").touch()
         return (None, None)
 
-    lock_file_single = make_lockfile_name(path, number)
+    lock_file_single = make_lockfile_name(path, stream_number)
     if not lock_file_single.exists():
         lock_file_single.touch()
     else:
         return (None, None)
 
-    audio_path = extract_audio_stream(path, number)
+    audio_path = extract_audio_stream(path, stream_number)
     if extract_only:
         lock_file_single.unlink()
         return (None, None)
@@ -318,8 +319,8 @@ def extract_normalize_merge_all(paths: List[pathlib.Path], reverse_order: bool =
     tasks: List[Tuple[pathlib.Path, int]] = list()
     for path, audio_stream_count, _ in path_streams:
         dict_orig_normed_counts[path] = {"done": [], "count": audio_stream_count}
-        for audio_stream in range(audio_stream_count):
-            tasks.append((path, audio_stream))
+        for audio_stream_number in range(audio_stream_count):
+            tasks.append((path, audio_stream_number))
 
     if reverse_order:
         # make a list because:
