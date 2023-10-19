@@ -63,6 +63,12 @@ def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
 def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path:
     normalized_temp_single.mkdir(exist_ok=True)
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp_single / path.name}.audio-{stream_number:03}.mkv")
+    normalized_out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / out_name.name}.normalized.mkv")
+
+    if normalized_out_name.exists():
+        # exit early, do not create extract file, not needed
+        return out_name
+
     overwrite = "-n" if no_overwrite_intermediary else "-y"
 
     commands = ["ffmpeg", "-hide_banner", overwrite, "-i", f"{path}", "-map", f"0:a:{stream_number}", "-c", "copy", f"{out_name}"]
@@ -168,7 +174,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / path.name}.normalized.mkv")
     logfile_name = pathlib.Path(path.name + ".log")
     if no_overwrite_intermediary and out_name.is_file():
-        path.unlink()  # remove old single extracted audio file
+        path.unlink(missing_ok=True)  # remove old single extracted audio file
         logfile_name.unlink(missing_ok=True)
         return out_name
         # TODO add codec to filename
@@ -326,6 +332,9 @@ def extract_normalize_merge_all(paths: List[pathlib.Path], reverse_order: bool =
         # make a list because:
         # TypeError: 'list_reverseiterator' object is not subscriptable
         tasks = list(reversed(tasks))
+
+    for task in tasks:
+        print(task)
 
     tasks = tasks[:do_count]  # only process first n tasks
 
