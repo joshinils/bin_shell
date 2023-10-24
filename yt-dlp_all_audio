@@ -189,7 +189,7 @@ def main(url: str) -> None:
         tasks.append((format, url, title))
 
     downloaded_names = []
-    with mp.Pool(processes=8) as mp_pool_download:
+    with mp.Pool(processes=1) as mp_pool_download:
         results = mp_pool_download.imap_unordered(download_format_wrap, tasks)
         mp_pool_download.close()
 
