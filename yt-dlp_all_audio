@@ -106,6 +106,7 @@ def download_format(format_tuple: Tuple[str, str], url: str, title: str) -> str:
         'ignoreerrors': True,
         'format': format,
         'outtmpl': temp_name,
+        'concurrent_fragment_downloads': 42,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -122,6 +123,7 @@ def download_subs(url: str, title: str) -> None:
         'allsubtitles': True,
         'skip_download': True,
         'outtmpl': title,
+        'concurrent_fragment_downloads': 42,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -130,7 +132,9 @@ def download_subs(url: str, title: str) -> None:
 
 
 def get_download_ids(url: str) -> Tuple[List[Tuple[str, str]], str]:
-    ydl_opts = {}
+    ydl_opts = {
+        'concurrent_fragment_downloads': 42,
+    }
     downloadable = []
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
