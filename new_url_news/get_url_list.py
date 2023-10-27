@@ -93,7 +93,7 @@ def main():
 
     urls_unique, urls_new = get_unique_urls(page_url, old_urls)
 
-    save_urls_file(urls_unique, urls_filename)
+    save_urls_file(list(set(urls_unique + old_urls)), urls_filename)
     # save_urls_file(urls_new, page_url.replace("/", "-") + "_new.txt")
 
     for url in urls_new:
