@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import pathlib
 import subprocess
 import sys
 import urllib.request
@@ -84,12 +85,15 @@ def save_urls_file(urls: Iterable, filename: str):
 def main():
     page_url = sys.argv[1]
 
-    with open(page_url.replace("/", "-") + ".txt", "r") as file:
-        old_urls = [line.rstrip() for line in file]
+    urls_filename = page_url.replace("/", "-") + ".txt"
+    old_urls = []  # empty default if first time for url
+    if pathlib.Path(urls_filename).exists():
+        with open(urls_filename, "r") as file:
+            old_urls = [line.rstrip() for line in file]
 
     urls_unique, urls_new = get_unique_urls(page_url, old_urls)
 
-    save_urls_file(urls_unique, page_url.replace("/", "-") + ".txt")
+    save_urls_file(urls_unique, urls_filename)
     # save_urls_file(urls_new, page_url.replace("/", "-") + "_new.txt")
 
     for url in urls_new:
