@@ -65,13 +65,13 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp_single / path.name}.audio-{stream_number:03}.mkv")
     normalized_out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / out_name.name}.normalized.mkv")
 
-    if normalized_out_name.exists():
+    if no_overwrite_intermediary and normalized_out_name.exists():
         # exit early, do not create extract file, not needed
         return out_name
 
     overwrite = "-n" if no_overwrite_intermediary else "-y"
 
-    commands = ["ffmpeg", "-hide_banner", overwrite, "-i", f"{path}", "-map", f"0:a:{stream_number}", "-c", "copy", f"{out_name}"]
+    commands = ["ffmpeg", "-hide_banner", overwrite, "-t", "0", "-i", f"{path}", "-i", f"{path}", "-map", "0:v:0", "-map", f"1:a:{stream_number}", "-c", "copy", f"{out_name}"]
     print("    ", commands)
     try:
         sub_process_result = subprocess.run(
@@ -202,7 +202,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
     commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-ac {num_channels} -dsurex_mode 1"]
 
     # do not pass -ac num_channels if there is weirdness with 3 channels, only happened once so far, so i don't care to implement it, nor would I know how to.
-    # ffmpeg seem s to think that -ac 3 menas 2.1, whereas 'mignight in paris' has two 3.0 audio streams
+    # ffmpeg seem s to think that -ac 3 means 2.1, whereas 'mignight in paris' has two 3.0 audio streams
     # commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}"]
 
     print("    ", commands)
@@ -257,7 +257,7 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
     return (normalized_path, path)
 
 
-def mkvmerge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio: List[pathlib.Path]) -> None:
+def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio: List[pathlib.Path]) -> None:
     video_out_name = video_path.name
     if override_codec != "libopus":
         name_parts = video_path.name.split(".")
@@ -266,7 +266,15 @@ def mkvmerge_normalized_with_video_subs(video_path: pathlib.Path, normalized_aud
 
     out_name = normalized_staging / video_out_name
 
-    commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + sorted(normalized_audio)
+    no_strings = ["-D", "-S", "-B", "-T", "-M", "--no-chapters", "--no-global-tags"]
+    # print(no_strings)
+    foo = []
+    for elem in sorted(normalized_audio):
+        foo += no_strings + [elem]
+    # print(foo)
+
+    commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + foo
+    # print(commands)
     commands = [str(elem) for elem in commands]
     print("    ", commands)
 
@@ -353,7 +361,7 @@ def extract_normalize_merge_all(paths: List[pathlib.Path], reverse_order: bool =
                     continue
                 dict_orig_normed_counts[path_orig]["done"].append(path_normalized)
                 if len(dict_orig_normed_counts[path_orig]["done"]) >= dict_orig_normed_counts[path_orig]["count"]:
-                    mp_pool_merge.apply_async(mkvmerge_normalized_with_video_subs, kwds={"video_path": path_orig, "normalized_audio": dict_orig_normed_counts[path_orig]["done"]})
+                    mp_pool_merge.apply_async(merge_normalized_with_video_subs, kwds={"video_path": path_orig, "normalized_audio": dict_orig_normed_counts[path_orig]["done"]})
                     del dict_orig_normed_counts[path_orig]
             mp_pool_merge.close()
             mp_pool_extract_norm.join()
