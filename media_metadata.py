@@ -22,9 +22,6 @@ def main(path: pathlib.Path):
 
     for a_track in media_info.audio_tracks:
         d = a_track.to_data()
-        delay_str = ""
-        if d.get('delay_relative_to_video', 0) > 0:
-            delay_str = f", d={d.get('delay_relative_to_video')}"
 
         format_commercial_name = d.get('commercial_name')
         format = d.get('format', format_commercial_name)
@@ -36,7 +33,7 @@ def main(path: pathlib.Path):
             else:
                 format += " " + format_commercial_name
 
-        langs_dict[d.get('language', "und")].append(f"ch: {d.get('channel_s')}, f={format}{delay_str}")
+        langs_dict[d.get('language', "und")].append(f"ch:{d.get('channel_s')}, {format}")
         # print(f"{d.get('title')=}")
         # print(f"{d.get('language')=}")
         # print(f"{d.get('channel_s')=}")
@@ -47,21 +44,30 @@ def main(path: pathlib.Path):
         # print(f"{d.get('format')=}")
         # print(f"{d.get('format_info')=}")
         # # pprint.pprint(d)
-        print()
+        # print()
 
     items = []
     for k, v in langs_dict.items():
         print(k, len(v))
-        if True or len(v) > 1 or k == "und":  # or "d=" in v[0]:
+        if len(v) > 1 or k == "und":  # or "d=" in v[0]:
             items.append(f"{k}:{len(v)}{v}")
 
     print(items)
     if len(items) == 0:
-        s = "single"
+        path_str = "single"
     else:
-        s = ", ".join(sorted(items))
-    print(f"{s=}")
-    p = pathlib.Path(s)
+        path_str = ", ".join(sorted(items))
+
+    path_str = path_str.replace("Dolby Digital Plus", "DDP")
+    path_str = path_str.replace("Dolby Digital", "DD")
+    path_str = path_str.replace("MLP FBA Dolby TrueHD", "TrueHD")
+    path_str = path_str.replace("TrueHD with Dolby Atmos", "TrueHD & Atmos")
+    path_str = path_str.replace("DTS-HD Master Audio", "DTS-HD")
+
+    path_str = path_str.replace("AC-3 DD", "AC-3")
+
+    print(f"{path_str=}")
+    p = pathlib.Path(path_str)
     print(f"{p=}")
     p.mkdir(exist_ok=True)
     print(path)
@@ -76,4 +82,5 @@ if __name__ == "__main__":
     paths = args.paths
 
     for path in paths:
+        print(path)
         main(path)
