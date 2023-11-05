@@ -62,7 +62,8 @@ def main(path: pathlib.Path):
     path_str = path_str.replace("Dolby Digital", "DD")
     path_str = path_str.replace("MLP FBA Dolby TrueHD", "TrueHD")
     path_str = path_str.replace("TrueHD with Dolby Atmos", "TrueHD & Atmos")
-    path_str = path_str.replace("DTS-HD Master Audio", "DTS-HD")
+    path_str = path_str.replace("DTS-HD Master Audio", "DTS-HD MA")
+    path_str = path_str.replace("DTS-HD High Resolution Audio", "DTS-HD HR")
 
     path_str = path_str.replace("AC-3 DD", "AC-3")
 
