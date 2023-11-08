@@ -342,8 +342,8 @@ def extract_normalize_merge_all(paths: List[pathlib.Path], reverse_order: bool =
         # TypeError: 'list_reverseiterator' object is not subscriptable
         tasks = list(reversed(tasks))
 
-    for task in tasks:
-        print(task)
+    for index, task in enumerate(tasks):
+        print(f"-c {index + 1:3d} {task}")
 
     tasks = tasks[:do_count]  # only process first n tasks
 
