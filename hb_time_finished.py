@@ -66,7 +66,9 @@ if delta_finished is None:
     exit()
 
 time_done: datetime.datetime = datetime.datetime.now() + delta_finished
-if time_done.day == (datetime.datetime.now() + datetime.timedelta(days=1)).day:
-    print(time_done.strftime("Morgen um %H:%M:%S"))
+days_left = delta_finished.days
+
+if days_left > 0:
+    print(f"{days_left}d", time_done.strftime("%a %H:%M:%S"))
 else:
     print(time_done.strftime("%H:%M:%S"))
