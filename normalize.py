@@ -17,14 +17,37 @@ normalized_output: Final[pathlib.Path] = pathlib.Path("normalized")  # finished 
 normalized_done: Final[pathlib.Path] = pathlib.Path("normalized_done")  # original file, not to be deleted
 
 
-class NameInfo(TypedDict):
-    done: List[pathlib.Path]
-    count: int
-
-
 def print_lineno() -> str:
     cf = currentframe()
     return f"{getframeinfo(cf).filename}:{cf.f_back.f_lineno}"
+
+
+mkvmerge_command_text: Optional[List[str]] = None
+for command_list in [
+    ["mkvmerge"],
+    ["flatpak", "run", "org.bunkus.mkvtoolnix-gui", "mkvmerge"],
+]:
+    try:
+        result = subprocess.run(
+            command_list + ["--version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        mkvmerge_version = result.stdout.decode('utf-8', errors="ignore").strip()
+        mkvmerge_command_text = command_list
+    except:  # noqa: E722
+        pass
+
+if mkvmerge_command_text is not None:
+    print(f"using \"{mkvmerge_version}\" via \"{' '.join(mkvmerge_command_text)}\"")
+else:
+    print("no viable mkvmerge found, exiting")
+    exit()
+
+
+class NameInfo(TypedDict):
+    done: List[pathlib.Path]
+    count: int
 
 
 def rmdir(path: pathlib.Path) -> None:
@@ -34,7 +57,7 @@ def rmdir(path: pathlib.Path) -> None:
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         return len(sub_process_std_out.rstrip().split("\n"))
@@ -49,7 +72,7 @@ def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         if sub_process_std_out.rstrip() == "":
@@ -77,7 +100,7 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         if(sub_process_result.returncode == 0
             or sub_process_result.returncode == 1 and no_overwrite_intermediary
@@ -106,7 +129,7 @@ def get_codec(path: pathlib.Path) -> str:
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         sub_process_std_out = sub_process_std_out.strip()
@@ -132,7 +155,7 @@ def get_sample_rate(path: pathlib.Path) -> str:
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         sub_process_std_out = sub_process_std_out.strip()
@@ -154,7 +177,7 @@ def get_channel_count(path: pathlib.Path) -> int:
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
         sub_process_std_out = sub_process_std_out.strip()
@@ -212,7 +235,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
             sub_process_result = subprocess.run(
                 commands,
                 stdout=logfile,
-                stderr=logfile
+                stderr=logfile,
             )
         if sub_process_result.returncode == 0:
             path.unlink()  # remove old single extracted audio file
@@ -270,7 +293,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     for elem in sorted(normalized_audio):
         no_video_opts_audio_paths += ["-D", "-S", "-B", "-T", "-M", "--no-chapters", "--no-global-tags"] + [elem]
 
-    commands = ["mkvmerge", "-v", "-o", out_name, "--no-audio", video_path] + no_video_opts_audio_paths
+    commands = mkvmerge_command_text + ["-v", "-o", out_name, "--no-audio", video_path] + no_video_opts_audio_paths
     commands = [str(elem) for elem in commands]
     print("    ", commands)
 
@@ -279,7 +302,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         )
         status_ok = sub_process_result.returncode == 0
         warning = sub_process_result.returncode == 1
