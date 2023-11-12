@@ -37,6 +37,8 @@ for command_list in [
         mkvmerge_command_text = command_list
     except:  # noqa: E722
         pass
+    if mkvmerge_command_text is not None:
+        break
 
 if mkvmerge_command_text is not None:
     print(f"using \"{mkvmerge_version}\" via \"{' '.join(mkvmerge_command_text)}\"")
@@ -293,6 +295,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     for elem in sorted(normalized_audio):
         no_video_opts_audio_paths += ["-D", "-S", "-B", "-T", "-M", "--no-chapters", "--no-global-tags"] + [elem]
 
+    global mkvmerge_command_text
     commands = mkvmerge_command_text + ["-v", "-o", out_name, "--no-audio", video_path] + no_video_opts_audio_paths
     commands = [str(elem) for elem in commands]
     print("    ", commands)
