@@ -25,7 +25,7 @@ def print_lineno() -> str:
 mkvmerge_command_text: Optional[List[str]] = None
 for command_list in [
     ["mkvmerge"],
-    ["flatpak", "run", "org.bunkus.mkvtoolnix-gui", "mkvmerge"],
+    ["flatpak", "run", "-vv", "org.bunkus.mkvtoolnix-gui", "mkvmerge"],
 ]:
     try:
         result = subprocess.run(
@@ -114,10 +114,10 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
             print(print_lineno(), f"{sub_process_std_out=}")
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(print_lineno(), f"{sub_process_std_err=}")
-            exit(3)
+            raise RuntimeError(f"ffmpeg extract_audio_stream returncode is not 0, but {sub_process_result.returncode}")
     except Exception as e:
         print(print_lineno(), type(e), e)
-        exit(2)
+        raise RuntimeError("ffmpeg extract_audio_stream had some error happen, and did not finish executing")
 
 
 def get_codec(path: pathlib.Path) -> str:
@@ -141,10 +141,10 @@ def get_codec(path: pathlib.Path) -> str:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(print_lineno(), f"{sub_process_std_err=}")
             print(print_lineno(), f"{sub_process_result.returncode=}")
-            exit(3)
+            raise RuntimeError(f"ffprobe get_codec returncode is not 0, but {sub_process_result.returncode}")
     except Exception as e:
         print(print_lineno(), type(e), e)
-        exit(2)
+        raise RuntimeError("ffprobe get_codec had some error happen, and did not finish executing")
 
 
 def get_sample_rate(path: pathlib.Path) -> str:
@@ -167,10 +167,10 @@ def get_sample_rate(path: pathlib.Path) -> str:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(print_lineno(), f"{sub_process_std_err=}")
             print(print_lineno(), f"{sub_process_result.returncode=}")
-            exit(3)
+            raise RuntimeError(f"ffprobe get_sample_rate returncode is not 0, but {sub_process_result.returncode}")
     except Exception as e:
         print(print_lineno(), type(e), e)
-        exit(2)
+        raise RuntimeError("ffprobe get_sample_rate had some error happen, and did not finish executing")
 
 
 def get_channel_count(path: pathlib.Path) -> int:
@@ -189,10 +189,10 @@ def get_channel_count(path: pathlib.Path) -> int:
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(print_lineno(), f"{sub_process_std_err=}")
             print(print_lineno(), f"{sub_process_result.returncode=}")
-            exit(3)
+            raise RuntimeError(f"ffprobe get_channel_count returncode is not 0, but {sub_process_result.returncode}")
     except Exception as e:
         print(print_lineno(), type(e), e)
-        exit(2)
+        raise RuntimeError("ffprobe get_channel_count had some error happen, and did not finish executing")
 
 
 def normalize(path: pathlib.Path) -> pathlib.Path:
@@ -246,10 +246,10 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
             return out_name
         else:
             print(print_lineno(), f"{sub_process_result.returncode=}", f"""see logfile: "{logfile_name=}" """)
-            exit(3)
+            raise RuntimeError(f"ffmpeg-normalize returncode is not 0, but {sub_process_result.returncode}")
     except Exception as e:
         print(print_lineno(), type(e), e)
-        exit(2)
+        raise RuntimeError("ffmpeg-normalize had some error happen, and did not finish executing")
 
 
 def make_lockfile_name(path: pathlib.Path, number: Optional[int] = None) -> pathlib.Path:
@@ -324,19 +324,21 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
             print(print_lineno(), f"{sub_process_result.returncode=}")
 
             if warning:
-                sub_process_std_err = sub_process_std_err.replace("\\n", "warning:    \n")
-                sub_process_std_out = sub_process_std_out.replace("\\n", "warning:    \n")
+                sub_process_std_err = sub_process_std_err.replace("\\n", "\nwarning:    ")
+                sub_process_std_out = sub_process_std_out.replace("\\n", "\nwarning:    ")
                 print(print_lineno(), f"\nwarning:    {sub_process_std_out=}")
                 print(print_lineno(), f"\nwarning:    {sub_process_std_err=}")
 
             if error:
-                print(print_lineno(), f"{sub_process_std_out=}")
-                print(print_lineno(), f"{sub_process_std_err=}")
-                exit(3)
+                sub_process_std_err = sub_process_std_err.replace("\\n", "\nerror:    ")
+                sub_process_std_out = sub_process_std_out.replace("\\n", "\nerror:    ")
+                print(print_lineno(), f"\nerror:    {sub_process_std_out=}")
+                print(print_lineno(), f"\nerror:    {sub_process_std_err=}")
+                raise RuntimeError(f"mkvmerge returncode is not 0, but {sub_process_result.returncode}")
     except Exception as e:
         print(traceback.print_exc())
         print(type(e), e)
-        exit(2)
+        raise RuntimeError("mkvmerge had some error happen, and did not finish executing")
 
     for path in normalized_audio:
         path.unlink()
