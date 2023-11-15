@@ -33,7 +33,7 @@ def main(path: pathlib.Path):
             else:
                 format += " " + format_commercial_name
 
-        langs_dict[d.get('language', "und")].append(f"ch:{d.get('channel_s')}, {format}")
+        langs_dict[d.get('language', "und")].append(f"{d.get('channel_s')}×{format}")
         # print(f"{d.get('title')=}")
         # print(f"{d.get('language')=}")
         # print(f"{d.get('channel_s')=}")
@@ -47,10 +47,12 @@ def main(path: pathlib.Path):
         # print()
 
     items = []
+    total_multi_streams = 0
     for k, v in langs_dict.items():
         print(k, len(v))
         if len(v) > 1 or k == "und":  # or "d=" in v[0]:
-            items.append(f"{k}:{len(v)}{v}")
+            total_multi_streams += len(v)
+            items.append(f"{len(v)}×{k}[{', '.join(v)}]")
 
     print(items)
     if len(items) == 0:
@@ -58,13 +60,14 @@ def main(path: pathlib.Path):
     else:
         path_str = ", ".join(sorted(items))
 
+    path_str = f"{total_multi_streams}— " + path_str
+
     path_str = path_str.replace("Dolby Digital Plus", "DDP")
     path_str = path_str.replace("Dolby Digital", "DD")
     path_str = path_str.replace("MLP FBA Dolby TrueHD", "TrueHD")
     path_str = path_str.replace("TrueHD with Dolby Atmos", "TrueHD & Atmos")
     path_str = path_str.replace("DTS-HD Master Audio", "DTS-HD MA")
     path_str = path_str.replace("DTS-HD High Resolution Audio", "DTS-HD HR")
-
     path_str = path_str.replace("AC-3 DD", "AC-3")
 
     print(f"{path_str=}")
