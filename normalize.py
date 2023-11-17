@@ -11,6 +11,7 @@ from typing import Dict, Final, List, Optional, Tuple, TypedDict
 import tqdm
 
 normalized_temp_single: Final[pathlib.Path] = pathlib.Path("normalized_temp_single")  # single extracted audio
+normalized_temp_single_staging: Final[pathlib.Path] = pathlib.Path("normalized_temp_single_staging")  # single extracted audio, incomplete extract
 normalized_temp: Final[pathlib.Path] = pathlib.Path("normalized_temp")  # single normalized audio
 normalized_staging: Final[pathlib.Path] = pathlib.Path("normalized_staging")  # compile combined file here
 normalized_output: Final[pathlib.Path] = pathlib.Path("normalized")  # finished combined file
@@ -86,19 +87,22 @@ def get_amount_of_audio_streams(path: pathlib.Path) -> Optional[int]:
 
 
 def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path:
-    normalized_temp_single.mkdir(exist_ok=True)
+    out_name_staging: pathlib.Path = pathlib.Path(f"{normalized_temp_single_staging / path.name}.audio-{stream_number:03}.mkv")
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp_single / path.name}.audio-{stream_number:03}.mkv")
-    normalized_out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / out_name.name}.normalized.mkv")
+    normalized_out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / out_name_staging.name}.normalized.mkv")
 
     if no_overwrite_intermediary and normalized_out_name.exists():
         # exit early, do not create extract file, not needed
         return out_name
 
-    overwrite = "-n" if no_overwrite_intermediary else "-y"
+    if out_name.exists():
+        # exit early, do not create extract file, not needed
+        return out_name
 
-    commands = ["ffmpeg", "-hide_banner", overwrite, "-t", "0", "-i", f"{path}", "-i", f"{path}", "-map", "0:v:0", "-map", f"1:a:{stream_number}", "-c", "copy", f"{out_name}"]
+    commands = ["ffmpeg", "-hide_banner", "-y", "-t", "0", "-i", f"{path}", "-i", f"{path}", "-map", "0:v:0", "-map", f"1:a:{stream_number}", "-c", "copy", f"{out_name_staging}"]
     print("    ", commands)
     try:
+        normalized_temp_single_staging.mkdir(exist_ok=True)
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
@@ -107,6 +111,8 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
         if(sub_process_result.returncode == 0
             or sub_process_result.returncode == 1 and no_overwrite_intermediary
            ):
+            normalized_temp_single.mkdir(exist_ok=True)
+            out_name_staging.rename(out_name)
             return out_name
         else:
             print(print_lineno(), f"{sub_process_result.returncode=}")
@@ -242,6 +248,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         if sub_process_result.returncode == 0:
             path.unlink()  # remove old single extracted audio file
             logfile_name.unlink()  # remove logfile, everything went ok
+            rmdir(normalized_temp_single_staging)
             rmdir(normalized_temp_single)
             return out_name
         else:
@@ -342,6 +349,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
 
     for path in normalized_audio:
         path.unlink()
+    rmdir(normalized_temp_single_staging)
     rmdir(normalized_temp_single)
     rmdir(normalized_staging)
 
@@ -516,6 +524,7 @@ def main():
     global extract_only
     extract_only = args.extract_only
 
+    rmdir(normalized_temp_single_staging)
     rmdir(normalized_temp_single)
     rmdir(normalized_staging)
     rmdir(normalized_output)
