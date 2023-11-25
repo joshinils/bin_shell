@@ -99,7 +99,7 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
         # exit early, do not create extract file, not needed
         return out_name
 
-    commands = ["ffmpeg", "-hide_banner", "-y", "-t", "0", "-i", f"{path}", "-i", f"{path}", "-map", "0:v:0", "-map", f"1:a:{stream_number}", "-c", "copy", f"{out_name_staging}"]
+    commands = ["ffmpeg", "-hide_banner", "-y", "-t", "0", "-i", f"{path}", "-i", f"{path}", "-map", "0:v:0?", "-map", f"1:a:{stream_number}", "-c", "copy", f"{out_name_staging}"]
     print("    ", commands)
     try:
         normalized_temp_single_staging.mkdir(exist_ok=True)

@@ -5,7 +5,7 @@ trap kill_sem INT
 function kill_sem() {
     for s in ~/.parallel/semaphores/id-$$/*@*;
     do
-        kill -15 -- -$(basename ${s%%@*})
+        kill -15 -- -"$(basename "${s%%@*}")"
     done
     exit
 }

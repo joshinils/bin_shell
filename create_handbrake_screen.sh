@@ -6,5 +6,5 @@
 # if not, create it
 
 if ! screen -list | grep -q "handbrake"; then
-    screen -dm -S handbrake /usr/bin/zsh -c "/media/wd4-r1/data/filme_neu/untouched/do.sh -i"
+    screen -dm -S handbrake /usr/bin/zsh -c "/media/wd4-r1/data/filme_neu/untouched/do.sh -i '${1}'"
 fi
