@@ -2,6 +2,7 @@
 
 import datetime
 import subprocess
+import sys
 
 
 # https://stackoverflow.com/a/136368
@@ -32,8 +33,10 @@ def tail(path, lines=20):
 
 subprocess.run(["screen", "-S", "handbrake", "-p", "0", "-X", "hardcopy"], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-
-last_lines = tail("/tmp/handbrake/hardcopy.0", 60)
+if len(sys.argv) > 1:
+    last_lines = tail(sys.argv[1], 60)
+else:
+    last_lines = tail("/tmp/handbrake/hardcopy.0", 60)
 
 delta_finished = None
 for line in last_lines:
