@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 
-find * -maxdepth 0 -type d | while read dir; do
+find -- * -maxdepth 0 -type d | while read -r dir; do
+    echo "'$dir'"
     # if folder empty, dont delete at end, nor loop through it
-    if [ -z "$(ls -A "${dir}")" ]; then
+    if [ "$(find "${dir}" | wc -l)" -ne 0 ]; then
         echo "Empty"
-        continue
+        # continue
     fi
 
     (
-        cd "$dir"
-        find * -maxdepth 0 -type d | while read sub_d; do
+        cd "$dir" || echo "error, $dir"
+        find -- * -maxdepth 0 -type d | while read -r sub_d; do
             echo "$dir"_"$sub_d"
             mv -n "$sub_d" ../"$dir"_"$sub_d"
         done
