@@ -3,11 +3,10 @@
 import datetime
 import pathlib
 import subprocess
-import sys
 
 
 # https://stackoverflow.com/a/136368
-def tail(path, lines=20):
+def tail(path, lines=20) -> str:
     with open(path, "rb") as f:
         total_lines_wanted = lines
 
@@ -29,15 +28,18 @@ def tail(path, lines=20):
             block_end_byte -= BLOCK_SIZE
             block_number -= 1
         all_read_text = b''.join(reversed(blocks))
-        return b'\n'.join(all_read_text.splitlines()[-total_lines_wanted:]).decode().split("\n")
+        decodable = b'\n'.join(all_read_text.splitlines()[-total_lines_wanted:])
+        try:
+            return decodable.decode(errors='ignore').split("\n")
+        except Exception as e:
+            print(e)
+            return ""
 
 
-subprocess.run(["screen", "-S", "handbrake", "-p", "0", "-X", "hardcopy"], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+hardcopy_file = pathlib.Path("/tmp/hardcopy_hb_remaining")
+subprocess.run(["screen", "-S", "handbrake", "-p", "0", "-X", "hardcopy", "-h", hardcopy_file], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-if len(sys.argv) > 1:
-    last_lines = tail(pathlib.Path(sys.argv[1]) / "hardcopy.0", 60)
-else:
-    last_lines = tail("/tmp/handbrake/hardcopy.0", 60)
+last_lines = tail(hardcopy_file, 60)
 
 delta_finished = None
 for line in last_lines:
