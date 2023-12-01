@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import datetime
+import pathlib
 import subprocess
 import sys
 
@@ -34,7 +35,7 @@ def tail(path, lines=20):
 subprocess.run(["screen", "-S", "handbrake", "-p", "0", "-X", "hardcopy"], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 if len(sys.argv) > 1:
-    last_lines = tail(sys.argv[1], 60)
+    last_lines = tail(pathlib.Path(sys.argv[1]) / "hardcopy.0", 60)
 else:
     last_lines = tail("/tmp/handbrake/hardcopy.0", 60)
 
