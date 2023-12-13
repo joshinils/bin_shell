@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+tar -c "${1}" | pv -pteIbar -i 0.1 -s "$(du "${1}" -sb|cut -f1)" | ssh jl@l-nas36 'tar --warning=no-timestamp -xf - -C /srv/data/filme_neu/untouched'
+
+copied_dir=$(dirname "$(realpath "${1}")")_copied
+mkdir -p "${copied_dir}"
+mv "${1}" "${copied_dir}"
+rmdir --ignore-fail-on-non-empty "$(dirname "$(realpath "${1}")")"

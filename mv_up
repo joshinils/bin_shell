@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
 mv "$1" "$(realpath "$1"| xargs -I {} dirname {}| xargs -I {} dirname {})"
+
+if [ "$#" -gt 1 ]; then
+    mv_up "${@:2}"
+fi
