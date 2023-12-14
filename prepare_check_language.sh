@@ -4,5 +4,5 @@ mkdir check_language -p
 mv -- *.mkv check_language
 cd check_language || exit
 
-sort_neu_besser_nochmal.sh
+sort_again_better_new.sh
 firefox -new-window file.html
