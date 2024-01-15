@@ -43,30 +43,33 @@ last_lines = tail(hardcopy_file, 60)
 
 delta_finished = None
 for line in last_lines:
-    parts = line.split(", ETA ")
-    if len(parts) < 2:
+    try:
+        parts = line.split(", ETA ")
+        if len(parts) < 2:
+            continue
+
+        h, rest = parts[1].split("h", 1)
+
+        if not h.isdigit():
+            continue
+        else:
+            h = int(h)
+
+        m, rest = rest.split("m", 1)
+        if not m.isdigit():
+            continue
+        else:
+            m = int(m)
+
+        s, rest = rest.split("s", 1)
+        if not s.isdigit():
+            continue
+        else:
+            s = int(s)
+
+        delta_finished = datetime.timedelta(hours=h, minutes=m, seconds=s)
+    except ValueError:
         continue
-
-    h, rest = parts[1].split("h", 1)
-
-    if not h.isdigit():
-        continue
-    else:
-        h = int(h)
-
-    m, rest = rest.split("m", 1)
-    if not m.isdigit():
-        continue
-    else:
-        m = int(m)
-
-    s, rest = rest.split("s", 1)
-    if not s.isdigit():
-        continue
-    else:
-        s = int(s)
-
-    delta_finished = datetime.timedelta(hours=h, minutes=m, seconds=s)
 
 if delta_finished is None:
     exit()
