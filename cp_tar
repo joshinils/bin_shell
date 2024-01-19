@@ -2,15 +2,16 @@
 
 mkdir "${2}" -p
 
-src_space=$(du "${1}" -s --block-size 1|cut -f1)
-dst_space=$(df -P "${2}" --block-size 1| awk 'NR==2 {print $4}')
+src_space=$(du "${1}" -s --block-size 1 | cut -f1)
+dst_space=$(df -P "${2}" --block-size 1 | awk 'NR==2 {print $4}')
 
-if (( $src_space >= $dst_space )); then
+if (( src_space >= dst_space )); then
     echo "destination may not be big enough:"
     echo "src $src_space $1"
     echo "dst $dst_space $2"
-    rmdir $2 -p --ignore-fail-on-non-empty
+    rmdir "$2" -p --ignore-fail-on-non-empty
     exit 1
 fi
 
-tar cf - "${1}" | pv -pteIbar -i 0.1 -s $src_space | (cd "${2}" && tar --warning=no-timestamp -xf -)
+# (cd "${1}" && tar -k -cf - .) | pv -pteIbar -i 0.1 -s "$src_space" | (cd "${2}" && tar --warning=no-timestamp -k -xf - )
+(cd "${1}" && tar -k -cf - .) | pv -pteIbar -i 0.1 -s "$src_space" | (cd "${2}" && tar --warning=no-timestamp -k -xf - -v)
