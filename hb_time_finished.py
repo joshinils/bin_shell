@@ -3,6 +3,7 @@
 import datetime
 import pathlib
 import subprocess
+import time
 
 
 # https://stackoverflow.com/a/136368
@@ -39,7 +40,12 @@ def tail(path, lines=20) -> str:
 hardcopy_file = pathlib.Path("/tmp/hardcopy_hb_remaining")
 subprocess.run(["screen", "-S", "handbrake", "-p", "0", "-X", "hardcopy", "-h", hardcopy_file], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-last_lines = tail(hardcopy_file, 60)
+for i in range(10):
+    try:
+        last_lines = tail(hardcopy_file, 60)
+        break
+    except OSError:
+        time.sleep(1)
 
 delta_finished = None
 for line in last_lines:
