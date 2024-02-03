@@ -234,6 +234,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
 
     # do not pass -ac num_channels if there is weirdness with 3 channels, only happened once so far, so i don't care to implement it, nor would I know how to.
     # ffmpeg seem s to think that -ac 3 means 2.1, whereas 'mignight in paris' has two 3.0 audio streams
+    # uncomment the following line:
     # commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}"]
 
     print("    ", commands)

@@ -102,11 +102,10 @@ def download_format_wrap(args: Tuple[Tuple[str, str], str, str]) -> str:
 def download_format(format_tuple: Tuple[str, str], url: str, title: str) -> str:
     format, track_title = format_tuple
     out_name = f"{title}.{format}.mkv"
-    temp_name = out_name + "_plain.mkv"
     ydl_opts = {
         'ignoreerrors': True,
         'format': format,
-        'outtmpl': temp_name,
+        'outtmpl': out_name,
         'concurrent_fragment_downloads': 42,
     }
 
@@ -114,7 +113,8 @@ def download_format(format_tuple: Tuple[str, str], url: str, title: str) -> str:
         error_code = ydl.download([url])
         print(error_code)
 
-    return set_track_title(temp_name, out_name, track_title)
+    # return set_track_title(out_name, out_name, track_title)
+    return track_title
 
 
 def download_subs(url: str, title: str) -> None:
@@ -187,6 +187,8 @@ def get_download_ids(url: str) -> Tuple[List[Tuple[str, str]], str]:
 
 def main(url: str) -> None:
     formats, title = get_download_ids(url)
+    title = title.replace("/", "⧸")
+
     download_subs(url, title)
 
     tasks = []
@@ -203,7 +205,7 @@ def main(url: str) -> None:
             downloaded_names.append(filepath)
         mp_pool_download.join()
 
-    merge(downloaded_names, f"{title}.mkv")
+    # merge(downloaded_names, f"{title}.mkv")
 
 
 if __name__ == "__main__":
