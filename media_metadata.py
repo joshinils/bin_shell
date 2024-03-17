@@ -92,10 +92,14 @@ def main(path: pathlib.Path):
     print(f"{path_str=}")
     p = pathlib.Path(path_str)
     print(f"{p=}")
-    p.mkdir(exist_ok=True)
-    print(path)
-    path.rename(p / path)
 
+    try:
+        p.mkdir(exist_ok=True)
+        print(path)
+        path.rename(p / path)
+    except:
+        # filename too long, ignore
+        pass
 
 if __name__ == "__main__":
     parser = TArgumentParser(description='sorts video files into folders according to their audio track types and counts')
