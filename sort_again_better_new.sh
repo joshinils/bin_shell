@@ -13,6 +13,6 @@ mv hd-tv-dvd---*.mkv hd-tv-dvd > /dev/null 2>&1
 
 find . -maxdepth 1 \( -iname '*.mkv' -o -iname '*.mp4' \) | sort > filme_names.txt
 
-/media/wd4-r1/data/filme/process_filme_names.py
+process_filme_names.py
 
 $HOME/settings/moviepilot/compare_csv_lst.py filme_names.csv /media/wd4-r1/data/filme/filme_names.csv -b -s > file.html
