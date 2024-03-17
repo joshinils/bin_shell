@@ -5,4 +5,8 @@ mv -- *.mkv check_language
 cd check_language || exit
 
 sort_again_better_new.sh
-firefox -new-window file.html
+
+if (( $# > 0 )); then
+    firefox -new-window file.html
+fi
+
