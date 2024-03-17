@@ -46,19 +46,38 @@ def main(path: pathlib.Path):
         # # pprint.pprint(d)
         # print()
 
-    items = []
+    items_multi = []
+    items_single = []
     total_multi_streams = 0
-    for k, v in langs_dict.items():
-        print(k, len(v))
-        if len(v) > 1 or k == "und":  # or "d=" in v[0]:
-            total_multi_streams += len(v)
-            items.append(f"{len(v)}×{k}[{', '.join(v)}]")
+    total_single_streams = 0
+    de = False
+    en = False
+    for lang_code, stream_type in langs_dict.items():
+        print(lang_code, len(stream_type))
+        de = lang_code == "de" or de
+        en = lang_code == "en" or en
+        if len(stream_type) > 1 or lang_code == "und":  # or "d=" in v[0]:
+            total_multi_streams += len(stream_type)
+            items_multi.append(f"{len(stream_type)}×{lang_code}[{', '.join(stream_type)}]")
+        elif len(stream_type) <= 1 or lang_code == "und":
+            total_single_streams += len(stream_type)
+            items_single.append(f"{len(stream_type)}×{lang_code}[{', '.join(stream_type)}]")
 
-    print(items)
-    if len(items) == 0:
-        path_str = "single"
-    else:
-        path_str = ", ".join(sorted(items))
+    path_str = ""
+
+    print(items_multi)
+    print(items_single)
+
+    path_str += ", ".join(sorted(items_multi) + sorted(items_single))
+
+    if en is False and de is False:
+        path_str += " no_lang"
+    elif en is True and de is False:
+        path_str += " single en"
+    elif en is False and de is True:
+        path_str += " single de"
+    elif en is True and de is True:
+        path_str += " de_en_both"
 
     path_str = f"{total_multi_streams}— " + path_str
 
