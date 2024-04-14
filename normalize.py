@@ -2,6 +2,7 @@
 
 import argparse
 import multiprocessing as mp
+import os
 import pathlib
 import subprocess
 import traceback
@@ -103,7 +104,7 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
     print("    ", commands)
     try:
         normalized_temp_single_staging.mkdir(exist_ok=True)
-        lock_file_name = make_lockfile_name(out_name)
+        lock_file_name = make_lockfile_name(path, stream_number)
         logfile_name = pathlib.Path(f"{lock_file_name}.log")
         with open(logfile_name, "a") as logfile:
             logfile.write(f"extracting {path}:{stream_number:02} via ({commands})\n")
@@ -277,8 +278,10 @@ def make_lockfile_name(path: pathlib.Path, number: Optional[int] = None) -> path
         normalized_output,
         normalized_done,
     ]:
-        import os
         path_str = path_str.replace(f"{os.sep}{sub_path}{os.sep}", os.sep)
+        path_str = path_str.replace(f"{os.sep}{sub_path}", os.sep)
+        path_str = path_str.replace(f"{sub_path}{os.sep}", "")
+        path_str = path_str.replace(f"{sub_path}", "")
 
     if number is None:
         return pathlib.Path(path_str + ".working")
@@ -343,7 +346,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     logfile_name = pathlib.Path(f"{lock_file_name}.log")
     try:
         with open(logfile_name, "a") as logfile:
-            logfile.write(f"merging {path} via ({commands})\n")
+            logfile.write(f"merging {out_name} via ({commands})\n")
 
         normalized_staging.mkdir(exist_ok=True)
         sub_process_result = subprocess.run(
