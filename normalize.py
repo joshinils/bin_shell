@@ -106,7 +106,7 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
         lock_file_name = make_lockfile_name(out_name)
         logfile_name = pathlib.Path(f"{lock_file_name}.log")
         with open(logfile_name, "a") as logfile:
-            logfile.write(f"extracting {path}:{stream_number:02} via ({commands})")
+            logfile.write(f"extracting {path}:{stream_number:02} via ({commands})\n")
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
@@ -223,13 +223,14 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
 
     bitrate_list = []
     bitrate_lut = {
-        1:  64_000,  # noqa: E241  # mono
-        2: 128_000,  # stereo
-        3: 160_000,  # 3.0  # 32 * 5 eh, ffs
-        5: 192_000,  # 4.1, Alien 1978, 5-kanal
-        6: 320_000,  # 5.1
-        7: 384_000,  # 6.1
-        8: 448_000,  # 7.1
+        1:  64_000,  # noqa: E241  # mono 32 * 2
+        2: 128_000,  # stereo 32 *  4
+        3: 160_000,  # 3.0  # 32 *  5, wegen "Midnight in Paris"
+        4: 176_000,  # 4.0  # 32 *  5.5, wegen "Bus Stop_1956" layout: L R C Cb, Surround 4.0
+        5: 192_000,  # 4.1, # 32 *  6, wegen "Alien_1978", 5-kanal
+        6: 320_000,  # 5.1, # 32 * 10
+        7: 384_000,  # 6.1, # 32 * 12
+        8: 448_000,  # 7.1, # 32 * 14
     }
 
     num_channels = get_channel_count(path)
@@ -290,6 +291,7 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
     audio_path = extract_audio_stream(path, stream_number)
     if extract_only:
         lock_file_name.unlink()
+        logfile_name.touch()
         logfile_name.unlink()
         return (None, None)
 
@@ -297,10 +299,12 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
         normalized_path = normalize(audio_path)
     except Exception as e:
         with open(logfile_name, "a") as logfile:
-            logfile.write(f"{print_lineno()} {type(e)} {e}")
+            logfile.write(f"{print_lineno()} {type(e)} {e}\n")
+            traceback.print_exc(file=logfile)
         return (None, None)
 
     lock_file_name.unlink()
+    logfile_name.touch()
     logfile_name.unlink()
     return (normalized_path, path)
 
@@ -327,7 +331,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     logfile_name = pathlib.Path(f"{lock_file_name}.log")
     try:
         with open(logfile_name, "a") as logfile:
-            logfile.write(f"merging {path} via ({commands})")
+            logfile.write(f"merging {path} via ({commands})\n")
 
         normalized_staging.mkdir(exist_ok=True)
         sub_process_result = subprocess.run(
