@@ -103,6 +103,9 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
     print("    ", commands)
     try:
         normalized_temp_single_staging.mkdir(exist_ok=True)
+        logfile_name = pathlib.Path(path.name + ".log")
+        with open(logfile_name, "a") as logfile:
+            logfile.write(f"extracting {path}:{stream_number:02} via ({commands})")
         sub_process_result = subprocess.run(
             commands,
             stdout=subprocess.PIPE,
@@ -111,6 +114,7 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
         if(sub_process_result.returncode == 0
             or sub_process_result.returncode == 1 and no_overwrite_intermediary
            ):
+            logfile_name.unlink()  # remove logfile, everything went ok
             normalized_temp_single.mkdir(exist_ok=True)
             out_name_staging.rename(out_name)
             return out_name
