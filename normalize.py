@@ -104,7 +104,7 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
     try:
         normalized_temp_single_staging.mkdir(exist_ok=True)
         lock_file_name = make_lockfile_name(out_name)
-        logfile_name = pathlib.Path(lock_file_name + ".log")
+        logfile_name = pathlib.Path(f"{lock_file_name}.log")
         with open(logfile_name, "a") as logfile:
             logfile.write(f"extracting {path}:{stream_number:02} via ({commands})")
         sub_process_result = subprocess.run(
@@ -209,7 +209,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / path.name}.normalized.mkv")
 
     lock_file_name = make_lockfile_name(path)
-    logfile_name = pathlib.Path(lock_file_name + ".log")
+    logfile_name = pathlib.Path(f"{lock_file_name}.log")
 
     if no_overwrite_intermediary and out_name.is_file():
         path.unlink(missing_ok=True)  # remove old single extracted audio file
@@ -280,16 +280,16 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
         pathlib.Path(f"{make_lockfile_name(path)}.not_found").touch()
         return (None, None)
 
-    lock_file_single = make_lockfile_name(path, stream_number)
-    logfile_name = pathlib.Path(lock_file_single + ".log")
-    if not lock_file_single.exists():
-        lock_file_single.touch()
+    lock_file_name = make_lockfile_name(path, stream_number)
+    logfile_name = pathlib.Path(f"{lock_file_name}.log")
+    if not lock_file_name.exists():
+        lock_file_name.touch()
     else:
         return (None, None)
 
     audio_path = extract_audio_stream(path, stream_number)
     if extract_only:
-        lock_file_single.unlink()
+        lock_file_name.unlink()
         logfile_name.unlink()
         return (None, None)
 
@@ -300,7 +300,7 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
             logfile.write(f"{print_lineno()} {type(e)} {e}")
         return (None, None)
 
-    lock_file_single.unlink()
+    lock_file_name.unlink()
     logfile_name.unlink()
     return (normalized_path, path)
 
@@ -324,7 +324,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     print("    ", commands)
 
     lock_file_name = make_lockfile_name(video_path)
-    logfile_name = pathlib.Path(lock_file_name + ".log")
+    logfile_name = pathlib.Path(f"{lock_file_name}.log")
     try:
         with open(logfile_name, "a") as logfile:
             logfile.write(f"merging {path} via ({commands})")
