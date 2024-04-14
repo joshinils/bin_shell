@@ -284,7 +284,10 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
     if extract_only:
         lock_file_single.unlink()
         return (None, None)
-    normalized_path = normalize(audio_path)
+    try:
+        normalized_path = normalize(audio_path)
+    except:
+        return (None, None)
 
     lock_file_single.unlink()
     return (normalized_path, path)
