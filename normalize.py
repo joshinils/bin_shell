@@ -213,7 +213,6 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
 
     if no_overwrite_intermediary and out_name.is_file():
         path.unlink(missing_ok=True)  # remove old single extracted audio file
-        logfile_name.unlink(missing_ok=True)
         return out_name
         # TODO add codec to filename
         # TODO add samplerate to filename
@@ -268,9 +267,22 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
 
 
 def make_lockfile_name(path: pathlib.Path, number: Optional[int] = None) -> pathlib.Path:
+    path_str = str(path)
+
+    for sub_path in [
+        normalized_temp_single,
+        normalized_temp_single_staging,
+        normalized_temp,
+        normalized_staging,
+        normalized_output,
+        normalized_done,
+    ]:
+        import os
+        path_str = path_str.replace(f"{os.sep}{sub_path}{os.sep}", os.sep)
+
     if number is None:
-        return pathlib.Path(str(path) + ".working")
-    return pathlib.Path(f"{path}_{number:03d}.working")
+        return pathlib.Path(path_str + ".working")
+    return pathlib.Path(f"{path_str}_{number:03d}.working")
 
 
 def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> Tuple[Optional[pathlib.Path], Optional[pathlib.Path]]:
