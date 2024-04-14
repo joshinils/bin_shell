@@ -103,7 +103,8 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
     print("    ", commands)
     try:
         normalized_temp_single_staging.mkdir(exist_ok=True)
-        logfile_name = pathlib.Path(out_name.name + ".log")
+        lock_file_name = make_lockfile_name(out_name)
+        logfile_name = pathlib.Path(lock_file_name + ".log")
         with open(logfile_name, "a") as logfile:
             logfile.write(f"extracting {path}:{stream_number:02} via ({commands})")
         sub_process_result = subprocess.run(
@@ -114,7 +115,6 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
         if(sub_process_result.returncode == 0
             or sub_process_result.returncode == 1 and no_overwrite_intermediary
            ):
-            logfile_name.unlink()  # remove logfile, everything went ok
             normalized_temp_single.mkdir(exist_ok=True)
             out_name_staging.rename(out_name)
             return out_name
@@ -207,7 +207,10 @@ def get_channel_count(path: pathlib.Path) -> int:
 
 def normalize(path: pathlib.Path) -> pathlib.Path:
     out_name: pathlib.Path = pathlib.Path(f"{normalized_temp / path.name}.normalized.mkv")
-    logfile_name = pathlib.Path(path.name + ".log")
+
+    lock_file_name = make_lockfile_name(path)
+    logfile_name = pathlib.Path(lock_file_name + ".log")
+
     if no_overwrite_intermediary and out_name.is_file():
         path.unlink(missing_ok=True)  # remove old single extracted audio file
         logfile_name.unlink(missing_ok=True)
@@ -252,7 +255,6 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
             )
         if sub_process_result.returncode == 0:
             path.unlink()  # remove old single extracted audio file
-            logfile_name.unlink()  # remove logfile, everything went ok
             rmdir(normalized_temp_single_staging)
             rmdir(normalized_temp_single)
             return out_name
@@ -279,6 +281,7 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
         return (None, None)
 
     lock_file_single = make_lockfile_name(path, stream_number)
+    logfile_name = pathlib.Path(lock_file_single + ".log")
     if not lock_file_single.exists():
         lock_file_single.touch()
     else:
@@ -287,13 +290,18 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
     audio_path = extract_audio_stream(path, stream_number)
     if extract_only:
         lock_file_single.unlink()
+        logfile_name.unlink()
         return (None, None)
+
     try:
         normalized_path = normalize(audio_path)
-    except:
+    except Exception as e:
+        with open(logfile_name, "a") as logfile:
+            logfile.write(f"{print_lineno()} {type(e)} {e}")
         return (None, None)
 
     lock_file_single.unlink()
+    logfile_name.unlink()
     return (normalized_path, path)
 
 
@@ -315,7 +323,12 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     commands = [str(elem) for elem in commands]
     print("    ", commands)
 
+    lock_file_name = make_lockfile_name(video_path)
+    logfile_name = pathlib.Path(lock_file_name + ".log")
     try:
+        with open(logfile_name, "a") as logfile:
+            logfile.write(f"merging {path} via ({commands})")
+
         normalized_staging.mkdir(exist_ok=True)
         sub_process_result = subprocess.run(
             commands,
@@ -361,7 +374,8 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     rmdir(normalized_temp_single)
     rmdir(normalized_staging)
 
-    make_lockfile_name(video_path).unlink()
+    lock_file_name.unlink()
+    logfile_name.unlink()
 
 
 def extract_normalize_merge_all(paths: List[pathlib.Path], reverse_order: bool = False, do_count: Optional[int] = None) -> None:
