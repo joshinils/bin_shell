@@ -103,7 +103,7 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
     print("    ", commands)
     try:
         normalized_temp_single_staging.mkdir(exist_ok=True)
-        logfile_name = pathlib.Path(path.name + ".log")
+        logfile_name = pathlib.Path(out_name.name + ".log")
         with open(logfile_name, "a") as logfile:
             logfile.write(f"extracting {path}:{stream_number:02} via ({commands})")
         sub_process_result = subprocess.run(
