@@ -227,6 +227,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         2: 128_000,  # stereo 32 *  4
         3: 160_000,  # 3.0  # 32 *  5, wegen "Midnight in Paris"
         4: 176_000,  # 4.0  # 32 *  5.5, wegen "Bus Stop_1956" layout: L R C Cb, Surround 4.0
+        # NOTIZ zu 4.0 opus kann kein L R C Cb layout, nur Lf Rf Lf Lb
         5: 192_000,  # 4.1, # 32 *  6, wegen "Alien_1978", 5-kanal
         6: 320_000,  # 5.1, # 32 * 10
         7: 384_000,  # 6.1, # 32 * 12
@@ -239,6 +240,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         bitrate_list = ["-b:a", f"{audio_bitrate}"]
 
     commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-ac {num_channels} -dsurex_mode 1"]
+    # commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", "aac"] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-ac {num_channels} -dsurex_mode 1"]
 
     # do not pass -ac num_channels if there is weirdness with 3 channels, only happened once so far, so i don't care to implement it, nor would I know how to.
     # same seems to happen with 4.0 with "Bus Stop_1956"
@@ -376,22 +378,33 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
             sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
             sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
             print(print_lineno(), f"{sub_process_result.returncode=}")
+            with open(logfile_name, "a") as logfile:
+                logfile.write(f"{print_lineno()}, {sub_process_result.returncode=}")
 
             if warning:
                 sub_process_std_err = sub_process_std_err.replace("\\n", "\nwarning:    ")
                 sub_process_std_out = sub_process_std_out.replace("\\n", "\nwarning:    ")
                 print(print_lineno(), f"\nwarning:    {sub_process_std_out=}")
                 print(print_lineno(), f"\nwarning:    {sub_process_std_err=}")
+                with open(logfile_name, "a") as logfile:
+                    logfile.write(f"{print_lineno()}, \nwarning:    {sub_process_std_out=}")
+                    logfile.write(f"{print_lineno()}, \nwarning:    {sub_process_std_err=}")
 
             if error:
                 sub_process_std_err = sub_process_std_err.replace("\\n", "\nerror:    ")
                 sub_process_std_out = sub_process_std_out.replace("\\n", "\nerror:    ")
                 print(print_lineno(), f"\nerror:    {sub_process_std_out=}")
                 print(print_lineno(), f"\nerror:    {sub_process_std_err=}")
+                with open(logfile_name, "a") as logfile:
+                    logfile.write(f"{print_lineno()}, \nerror:    {sub_process_std_out=}")
+                    logfile.write(f"{print_lineno()}, \nerror:    {sub_process_std_err=}")
                 raise RuntimeError(f"mkvmerge returncode is not 0, but {sub_process_result.returncode}")
     except Exception as e:
         print(traceback.print_exc())
         print(type(e), e)
+        with open(logfile_name, "a") as logfile:
+            traceback.print_exc(logfile)
+            logfile.write(f"{type(e)}, {e}")
         raise RuntimeError("mkvmerge had some error happen, and did not finish executing")
 
     for path in normalized_audio:
