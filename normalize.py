@@ -241,6 +241,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
     commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-ac {num_channels} -dsurex_mode 1"]
 
     # do not pass -ac num_channels if there is weirdness with 3 channels, only happened once so far, so i don't care to implement it, nor would I know how to.
+    # same seems to happen with 4.0 with "Bus Stop_1956"
     # ffmpeg seem s to think that -ac 3 means 2.1, whereas 'mignight in paris' has two 3.0 audio streams
     # uncomment the following line:
     # commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}"]
@@ -284,8 +285,14 @@ def make_lockfile_name(path: pathlib.Path, number: Optional[int] = None) -> path
         path_str = path_str.replace(f"{sub_path}", "")
 
     if number is None:
-        return pathlib.Path(path_str + ".working")
-    return pathlib.Path(f"{path_str}_{number:03d}.working")
+        path_str = path_str + ".working"
+    else:
+        path_str =f"{path_str}_{number:03d}.working"
+
+    path_str = path_str.replace(".audio-", "_")
+    path_str = path_str.replace(".mkv.working", ".working")
+
+    return pathlib.Path(path_str)
 
 
 def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, int]) -> Tuple[Optional[pathlib.Path], Optional[pathlib.Path]]:
