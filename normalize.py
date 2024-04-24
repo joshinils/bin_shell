@@ -413,7 +413,11 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
     rmdir(normalized_temp_single)
     rmdir(normalized_staging)
 
+    with open(lock_file_name, "a") as lockfile:
+        lockfile.write(f"{print_lineno()}, about to delete this file\n")
     lock_file_name.unlink()
+    with open(logfile_name, "a") as logfile:
+        logfile.write(f"{print_lineno()}, about to delete this file\n")
     logfile_name.unlink()
 
 
