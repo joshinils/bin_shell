@@ -16,6 +16,7 @@ find -- * -maxdepth 0 -type d | while read -r dir; do
         done
     )
 
-    # delete folder if now empty
-    rmdir "$dir" --ignore-fail-on-non-empty
+    ## delete folder if now empty
+    # mv "$dir" "flattened_empty__$dir"
+    # rmdir "$dir" --ignore-fail-on-non-empty
 done

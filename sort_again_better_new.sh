@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 
-mkdir bonus -p > /dev/null 2>&1
-mv *bonus*.mkv bonus > /dev/null 2>&1
-
-rmdir bonus > /dev/null 2>&1
-
-mkdir better again new hd-tv-dvd -p > /dev/null 2>&1
+mkdir bonus better again new hd-tv-dvd -p > /dev/null 2>&1
+mv bonus---*.mkv bonus > /dev/null 2>&1
 mv better---*.mkv better > /dev/null 2>&1
 mv again---*.mkv again > /dev/null 2>&1
 mv new---*.mkv new > /dev/null 2>&1

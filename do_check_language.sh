@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd check_language || exit
+cd check_language_staging || exit
 
 find . -type f -name '*.mkv' -exec mv {} . \;
 find . -type d -empty -delete
@@ -14,3 +14,13 @@ find . -type d -empty -delete
 find . -maxdepth 1 -type d -exec sh -c 'cd $1; media_metadata.py *.mkv' shell {} \;
 flattendirectory
 find . -type d -empty -delete
+
+mkdir -p ../check_language
+mv -n -- * ../check_language
+for d in */ ; do
+    echo "$d"
+    mv -n "$d"/* ../check_language/"$d"
+done
+find . -type d -empty -delete
+cd ..
+rmdir --ignore-fail-on-non-empty check_language_staging

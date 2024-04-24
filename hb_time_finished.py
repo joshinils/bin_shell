@@ -46,6 +46,8 @@ for i in range(10):
         break
     except OSError:
         time.sleep(1)
+else:
+    exit(1)
 
 delta_finished = None
 for line in last_lines:
