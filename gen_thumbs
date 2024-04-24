@@ -12,7 +12,7 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ] || [ $# -lt 1 ]; then
     exit 1
 fi
 
-grid=${2:-8}
+grid=${2:-4}
 yes_no=${3:--y}
 
 if [ -z "${4}" ]; then
@@ -30,12 +30,13 @@ echo "         $1 $2 $3 $4"
 
 frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 "${1}")
 frames=${frames//,/}
-# echo frames:$frames
-n_th_frame=$(echo \($frames - 240\) / \($grid \* $grid\) | bc)
-# echo n_th_frame:$n_th_frame
+framerate=$(ffmpeg -i "$1" 2>&1 | sed -n "s/.*, \(.*\) fp.*/\1/p")
+skip_duration=$(echo "(($frames / $grid) / $grid) / $framerate"|bc)
+n_th_frame=$(echo \($frames - \( $framerate \* $skip_duration \)\) / \($grid \* $grid\) | bc)
+echo skip_duration=$skip_duration grid=$grid frames=$frames n_th_frame=$n_th_frame framerate=$framerate
 
 # ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=320:180,tile=${grid}x${grid}" "${out_name// /_}" -y </dev/null
-nice -n 20 ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "./${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=iw*min(1\, 2560/(iw*$grid)):ih*min(1\, 2560/(iw*$grid))/sar,tile=${grid}x${grid}" "./${out_name}" "${yes_no}" </dev/null
+nice -n 20 ffmpeg -hide_banner -loglevel error -stats -ss $skip_duration -i "./${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=iw*min(1\, 2560/(iw*$grid)):ih*min(1\, 2560/(iw*$grid))/sar,tile=${grid}x${grid}" "./${out_name}" "${yes_no}" </dev/null
 # ffmpeg                                   -ss     4212 -i "${1}"           -vf                                    scale=iw*sar    :  ih -frames:v 1 -q:v 2 out.jpg
 
 logo_file="../clearlogo.png"
