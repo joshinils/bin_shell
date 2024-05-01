@@ -100,7 +100,7 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
         # exit early, do not create extract file, not needed
         return out_name
 
-    commands = ["ffmpeg", "-hide_banner", "-y", "-t", "0", "-i", f"{path}", "-i", f"{path}", "-map", "0:v:0?", "-map", f"1:a:{stream_number}", "-c", "copy", f"{out_name_staging}"]
+    commands = ["ionice", "-c", "3", "ffmpeg", "-hide_banner", "-y", "-t", "0", "-i", f"{path}", "-i", f"{path}", "-map", "0:v:0?", "-map", f"1:a:{stream_number}", "-c", "copy", f"{out_name_staging}"]
     print("    ", commands)
     try:
         normalized_temp_single_staging.mkdir(exist_ok=True)
@@ -347,7 +347,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         no_video_opts_audio_paths += ["-D", "-S", "-B", "-T", "-M", "--no-chapters", "--no-global-tags"] + [elem]
 
     global mkvmerge_command_text
-    commands = mkvmerge_command_text + ["-v", "-o", out_name, "--no-audio", video_path] + no_video_opts_audio_paths
+    commands = ["ionice", "-n", "3"] + mkvmerge_command_text + ["-v", "-o", out_name, "--no-audio", video_path] + no_video_opts_audio_paths
     commands = [str(elem) for elem in commands]
     print("    ", commands)
 
