@@ -106,7 +106,7 @@ def trunc_filename(filename: str) -> str:
     for _ in extensions:
         for ext in extensions:
             if filename.endswith("." + ext):
-                filename = filename[:-len(ext)]
+                filename = filename[:-len(ext)+1]
 
     for ext in extensions:
         filename = filename.replace(f".{ext}.audio-", " #")
