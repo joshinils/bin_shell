@@ -102,10 +102,11 @@ def get_percentage_bar(percentage: float, width_chars, current_stream=1, total_s
 
 
 def trunc_filename(filename: str) -> str:
-    extensions = ["log", "mp4", "mkv"]
-    for ext in extensions:
-        if filename.endswith("." + ext):
-            filename = filename[:-4]
+    extensions = ["log", "mp4", "mkv", "working"]
+    for _ in extensions:
+        for ext in extensions:
+            if filename.endswith("." + ext):
+                filename = filename[:-len(ext)]
 
     for ext in extensions:
         filename = filename.replace(f".{ext}.audio-", " #")
