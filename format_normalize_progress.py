@@ -109,6 +109,7 @@ def trunc_filename(filename: str) -> str:
                 filename = filename[:-len(ext)-1]
 
     for ext in extensions:
+        filename = filename.replace(f".{ext}_", " #")
         filename = filename.replace(f".{ext}.audio-", " #")
         filename = filename.replace(" #0", " # ")
         filename = filename.replace(" # 0", " #  ")
