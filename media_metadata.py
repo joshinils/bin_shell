@@ -97,6 +97,8 @@ def main(path: pathlib.Path):
         p.mkdir(exist_ok=True)
         print(path)
         path.rename(p / path)
+        path.rename(p / str(path).replace(".mkv", ".png"))
+        path.rename(p / str(path).replace(".mp4", ".png"))
     except:
         # filename too long, ignore
         pass
