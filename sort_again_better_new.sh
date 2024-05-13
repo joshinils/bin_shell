@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
 
 mkdir bonus better again new hd-tv-dvd -p > /dev/null 2>&1
-mv bonus---*.mkv bonus > /dev/null 2>&1
-mv bonus---*.png bonus > /dev/null 2>&1
-mv bonus---*.mp4 bonus > /dev/null 2>&1
-mv better---*.mkv better > /dev/null 2>&1
-mv better---*.png better > /dev/null 2>&1
-mv better---*.mp4 better > /dev/null 2>&1
-mv again---*.mkv again > /dev/null 2>&1
-mv again---*.mp4 again > /dev/null 2>&1
-mv again---*.png again > /dev/null 2>&1
-mv new---*.mkv new > /dev/null 2>&1
-mv new---*.mp4 new > /dev/null 2>&1
-mv new---*.png new > /dev/null 2>&1
-mv hd-tv-dvd---*.mkv hd-tv-dvd > /dev/null 2>&1
-mv hd-tv-dvd---*.mp4 hd-tv-dvd > /dev/null 2>&1
-mv hd-tv-dvd---*.png hd-tv-dvd > /dev/null 2>&1
+
+declare -a media_types=(
+    "bonus"
+    "better"
+    "again"
+    "new"
+    "hd-tv-dvd"
+)
+
+for m_type in "${media_types[@]}"; do
+    mv "$m_type"---*.mkv "$m_type" > /dev/null 2>&1
+    mv "$m_type"---*.mp4 "$m_type" > /dev/null 2>&1
+    mv "$m_type"---*.png "$m_type" > /dev/null 2>&1
+done
 
 find . -maxdepth 1 \( -iname '*.mkv' -o -iname '*.mp4' \) | sort > filme_names.txt
 
