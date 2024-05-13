@@ -6,9 +6,9 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ] || [ $# -lt 1 ]; then
     echo ""
     echo "Arguments:"
     echo "  video_file: The input video file."
-    echo "  grid (optional): The number of tiles per row/column. Default is 8."
-    echo "  yes_no (optional): Specify '-n' to skip processing if output file already exists. Default is '-y'."
-    echo "  suffix (optional): A suffix to append to the output file name. If not provided, no suffix is added."
+    echo "  grid   (optional if last): The number of tiles per row/column. Default is 4."
+    echo "  yes_no (optional if last): Specify '-n' to skip processing if output file already exists. Default is '-y'."
+    echo "  suffix (optional if last): A suffix to append to the output file name. input.png vs input-suffix.png, default is none."
     exit 1
 fi
 
@@ -31,12 +31,12 @@ echo "         $1 $2 $3 $4"
 frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 "${1}")
 frames=${frames//,/}
 framerate=$(ffmpeg -i "$1" 2>&1 | sed -n "s/.*, \(.*\) fp.*/\1/p")
-skip_duration=$(echo "(($frames - ($grid * $grid)) / ($grid * $grid + 1)) / $framerate"|bc)
-n_th_frame=$(echo \($frames - \( $framerate \* $skip_duration \)\) / \($grid \* $grid\) | bc)
-echo skip_duration=$skip_duration grid=$grid frames=$frames n_th_frame=$n_th_frame framerate=$framerate
+skip_duration=$(echo "(($frames - ($grid * $grid)) / ($grid * $grid + 1)) / $framerate"|bc -l)
+n_th_frame=$(echo "($frames + 1) / ($grid * $grid + 1)" | bc)  # simplified by wolframalpha from "($frames -   ($frames - ($grid * $grid)) / ($grid * $grid + 1)    ) / ($grid * $grid)"
+echo "skip_duration=$skip_duration grid=$grid frames=$frames n_th_frame=$n_th_frame framerate=$framerate"
 
 # ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=320:180,tile=${grid}x${grid}" "${out_name// /_}" -y </dev/null
-nice -n 20 ffmpeg -hide_banner -loglevel error -stats -ss $skip_duration -i "./${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=iw*min(1\, 2560/(iw*$grid)):ih*min(1\, 2560/(iw*$grid))/sar,tile=${grid}x${grid}" "./${out_name}" "${yes_no}" </dev/null
+nice -n 20 ffmpeg -hide_banner -loglevel error -stats -ss "$skip_duration" -i "./${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=iw*min(1\, 2560/(iw*$grid)):ih*min(1\, 2560/(iw*$grid))/sar,tile=${grid}x${grid}" "./${out_name}" "${yes_no}" </dev/null
 # ffmpeg                                   -ss     4212 -i "${1}"           -vf                                    scale=iw*sar    :  ih -frames:v 1 -q:v 2 out.jpg
 
 logo_file="../clearlogo.png"
