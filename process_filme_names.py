@@ -71,6 +71,27 @@ def gen_csv(file_name):
     print(file_path, len(file_lines))
 
     for filename in tqdm.tqdm(file_lines, dynamic_ncols=True, miniters=1):
+        for sort_num in range(1000):
+            filename = filename.removeprefix(f"{sort_num:>03}")
+
+        for media_type_prefix in [
+            "__TV",
+            "_MED",
+            "_DVD",
+            "__BD",
+        ]:
+            filename = filename.removeprefix(media_type_prefix)
+
+        for media_type_prefix in [
+            "bonus",
+            "better",
+            "again",
+            "new",
+            "hd-tv-dvd",
+        ]:
+            filename = filename.removeprefix(media_type_prefix)
+            filename = filename.removeprefix("---")
+
         split_parts = filename.strip().split("/")
         if len(split_parts) == 5:
             _, _, year, _, basename = split_parts
