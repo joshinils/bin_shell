@@ -32,7 +32,7 @@ frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries strea
 frames=${frames//,/}
 framerate=$(ffmpeg -i "$1" 2>&1 | sed -n "s/.*, \(.*\) fp.*/\1/p")
 skip_duration=$(echo "(($frames - ($grid * $grid)) / ($grid * $grid + 1)) / $framerate"|bc -l)
-n_th_frame=$(echo "($frames + 1) / ($grid * $grid + 1)" | bc)  # simplified by wolframalpha from "($frames -   ($frames - ($grid * $grid)) / ($grid * $grid + 1)    ) / ($grid * $grid)"
+n_th_frame=$(echo "$frames / ($grid * $grid + 1)" | bc)
 echo "skip_duration=$skip_duration grid=$grid frames=$frames n_th_frame=$n_th_frame framerate=$framerate"
 
 # ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=320:180,tile=${grid}x${grid}" "${out_name// /_}" -y </dev/null
