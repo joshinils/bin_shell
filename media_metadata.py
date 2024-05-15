@@ -111,5 +111,7 @@ if __name__ == "__main__":
     paths = args.paths
 
     for path in paths:
+        if str(path) in ["*.mkv", "*.mp4", "*.png"]:
+            continue
         print(path)
         main(path)

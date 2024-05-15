@@ -68,7 +68,9 @@ def gen_csv(file_name):
         for line in filme_file:
             file_lines.append(line.rstrip('\n'))
 
-    print(file_path, len(file_lines))
+    if len(file_lines) == 0:
+        print(f"ignoring {file_path=}, {len(file_lines)=}, skipping")
+        return
 
     for filename in tqdm.tqdm(file_lines, dynamic_ncols=True, miniters=1):
         for sort_num in range(1000):
