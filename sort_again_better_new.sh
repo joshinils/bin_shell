@@ -11,7 +11,7 @@ declare -a media_types=(
 )
 
 for m_type in "${media_types[@]}"; do
-    mv {{000..999}{__TV_,_MED_,_DVD_,__BD_},}"$m_type"---*.{mkv,mp4,png} "$m_type" > /dev/null 2>&1
+    find . -maxdepth 1 -regex "\./\([0-9]\{3\}_\(_TV\|MED\|DVD\|_BD\)_\)*${m_type}---.*\.\(mkv\|mp4\|png\)" -exec mv {} "$m_type" \; > /dev/null 2>&1
 done
 
 find . -maxdepth 1 \( -iname '*.mkv' -o -iname '*.mp4' \) | sort > filme_names.txt

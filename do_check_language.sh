@@ -2,21 +2,16 @@
 
 cd check_language_staging || exit
 
-find . -type f -name '*.mkv' -exec mv {} . \;
-find . -type f -name '*.mp4' -exec mv {} . \;
-find . -type f -name '*.png' -exec mv {} . \;
+find . -type f \( -name '*.mkv' -o -name '*.mp4' -o -name '*.png' \) -exec mv {} . \;
 find . -type d -empty -delete
 
 sort_again_better_new.sh
 rm file.html filme_names.csv filme_names.firefox filme_names.txt .movie_languages_meta.pkl
 
-find . -maxdepth 1 -type d -exec sh -c 'cd $1; mkdir DVD BD -p; mv -- *DVD*.mkv DVD; mv -- *BD*.mkv BD' shell {} \;
-find . -maxdepth 1 -type d -exec sh -c 'cd $1; mkdir DVD BD -p; mv -- *DVD*.mp4 DVD; mv -- *BD*.mp4 BD' shell {} \;
-find . -maxdepth 1 -type d -exec sh -c 'cd $1; mkdir DVD BD -p; mv -- *DVD*.png DVD; mv -- *BD*.png BD' shell {} \;
+find . -maxdepth 1 -type d -exec sh -c 'cd $1; mkdir DVD BD -p; mv -- *DVD*.mkv *DVD*.mp4 *DVD*.png DVD; mv -- *BD*.mkv *BD*.mp4 *BD*.png BD' shell {} \;
 flattendirectory
 find . -type d -empty -delete
-find . -maxdepth 1 -type d -exec sh -c 'cd $1; media_metadata.py *.mkv' shell {} \;
-find . -maxdepth 1 -type d -exec sh -c 'cd $1; media_metadata.py *.mp4' shell {} \;
+find . -maxdepth 1 -type d -exec sh -c 'cd $1; media_metadata.py *.mkv *.mp4' shell {} \;
 flattendirectory
 find . -type d -empty -delete
 
