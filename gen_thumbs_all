@@ -1,20 +1,11 @@
 #!/usr/bin/env bash
-trap kill_sem INT
 
-function kill_sem() {
-    for s in ~/.parallel/semaphores/id-"$$"/*@*;
-    do
-        kill -15 -- -"$(basename "${s%%@*}")"
-    done
-}
-
-max_threads=${4:-12}
+max_threads=${4:-20}
 cpus=$(grep -c ^processor /proc/cpuinfo)
 cores=$([ "$cpus" -le "$max_threads" ] && echo "$cpus" || echo "$max_threads")
 
-find -- * -maxdepth 0 -type f \( -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.webm" \) -print0 | shuf --zero-terminated | while IFS= read -r -d '' file; do
-    escaped_file=$(printf '%q' "$file")
-    sem --id $$ --lb -j "${cores}" ionice -c 3 gen_thumbs "${escaped_file}" "${1}" "${2}" "${3}"
-done
-sem --id $$ --wait
-wait
+export gen_thumbs  # ensure gen_thumbs is available to parallel
+
+find -- * -maxdepth 0 -type f \( -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.webm" \) -print0 | \
+    xargs -0 ls -S | \
+    parallel --bar --tag --line-buffer -j "${cores}" ionice -c 3 gen_thumbs "{}" "${1}" "${2}" "${3}"
