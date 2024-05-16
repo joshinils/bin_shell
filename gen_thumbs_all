@@ -14,7 +14,7 @@ cores=$([ "$cpus" -le "$max_threads" ] && echo "$cpus" || echo "$max_threads")
 
 find -- * -maxdepth 0 -type f \( -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.webm" \) -print0 | shuf --zero-terminated | while IFS= read -r -d '' file; do
     escaped_file=$(printf '%q' "$file")
-    sem --id $$ --lb -j "${cores}" gen_thumbs "${escaped_file}" "${1}" "${2}" "${3}"
+    sem --id $$ --lb -j "${cores}" ionice -c 3 gen_thumbs "${escaped_file}" "${1}" "${2}" "${3}"
 done
 sem --id $$ --wait
 wait
