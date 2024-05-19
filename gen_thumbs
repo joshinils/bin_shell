@@ -31,6 +31,8 @@ echo "         $1 $2 $3 $4"
 frames=$(ionice -c 3 ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 "${1}")
 frames=${frames//,/}
 
+# frames=$((grid * grid))  # to precisely only show the first g² frames
+
 if [ "$frames" -lt $((grid * grid)) ]; then
     echo "too few frames $frames < $((grid * grid)) for file $1"
     few_folder="too_few_frames_grid=_$((grid * grid))_frames=${frames}"
@@ -41,7 +43,7 @@ fi
 
 framerate=$(ffmpeg -i "$1" 2>&1 | sed -n "s/.*, \(.*\) fp.*/\1/p")
 skip_duration=0$(echo "(($frames - ($grid * $grid)) / ($grid * $grid + 1)) / $framerate"|bc -l)
-n_th_frame=$(echo "$frames / ($grid * $grid + 1)" | bc)
+n_th_frame=$(echo "scale=0; x = $frames / ($grid * $grid + 1); if (x < 1) x = 1; x" | bc)
 echo "skip_duration=$skip_duration grid=$grid frames=$frames n_th_frame=$n_th_frame framerate=$framerate"
 
 # ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=320:180,tile=${grid}x${grid}" "${out_name// /_}" -y </dev/null
