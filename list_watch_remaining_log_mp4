@@ -62,7 +62,7 @@ rm -f $var
 touch $var
 find . "Link to makeMKV_out"/ -maxdepth 1 \( -name "*.log" \) 2> /dev/null | while read -r fname; do
     tail_log=$(tail -n 1 "${fname}" | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g")
-    echo "$tail_log ${fname}"|format_normalize_progress.py >> $var
+    echo "$tail_log ${fname}" | format_normalize_progress.py | grep -v '^\s*$' >> $var
 done
 
 export LC_ALL=C
