@@ -428,8 +428,8 @@ def extract_normalize_merge_all(paths: List[pathlib.Path], reverse_order: bool =
             continue
         path_streams.append((path, get_amount_of_audio_streams(path), path.stat().st_size))
 
-    path_streams.sort(key=lambda x: x[2], reverse=True)
-    path_streams.sort(key=lambda x: x[1], reverse=True)
+    path_streams.sort(key=lambda x: x[2], reverse=False)
+    path_streams.sort(key=lambda x: x[1], reverse=False)
 
     dict_orig_normed_counts: Dict[pathlib.Path, NameInfo] = dict()
     tasks: List[Tuple[pathlib.Path, int]] = list()
