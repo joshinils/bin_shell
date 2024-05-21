@@ -100,19 +100,23 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
         # exit early, do not create extract file, not needed
         return out_name
 
-    commands = ["ionice", "-c", "3", "ffmpeg", "-hide_banner", "-y", "-t", "0", "-i", f"{path}", "-i", f"{path}", "-map", "0:v:0?", "-map", f"1:a:{stream_number}", "-c", "copy", f"{out_name_staging}"]
-    print("    ", commands)
+    ffmpeg_extract_command = ["ionice", "-c", "3", "ffmpeg_tqdm.py", "-hide_banner", "-y", "-t", "0", "-i", f"{path}", "-i", f"{path}", "-map", "0:v:0?", "-map", f"1:a:{stream_number}", "-c", "copy", f"{out_name_staging}"]
+    print("    ", ffmpeg_extract_command)
     try:
         normalized_temp_single_staging.mkdir(exist_ok=True)
         lock_file_name = make_lockfile_name(path, stream_number)
         logfile_name = pathlib.Path(f"{lock_file_name}.log")
+
         with open(logfile_name, "a") as logfile:
-            logfile.write(f"extracting {path}:{stream_number:02} via ({commands})\n")
-        sub_process_result = subprocess.run(
-            commands,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+            logfile.write(f"extracting {path}:{stream_number:02} via ({ffmpeg_extract_command})\n")
+
+        with open(logfile_name, "a") as logfile_stderr:
+            sub_process_result = subprocess.run(
+                ffmpeg_extract_command,
+                stdout=subprocess.PIPE,
+                stderr=logfile_stderr,
+            )
+
         if(sub_process_result.returncode == 0
             or sub_process_result.returncode == 1 and no_overwrite_intermediary
            ):
@@ -250,7 +254,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
 
     print("    ", commands)
     try:
-        with open(logfile_name, "w") as logfile:
+        with open(logfile_name, "a") as logfile:
             normalized_temp.mkdir(exist_ok=True)
             sub_process_result = subprocess.run(
                 commands,

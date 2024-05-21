@@ -154,7 +154,7 @@ def main() -> None:
     #     print(f"{i:03}", get_percentage_bar(i, hundred, 1, 1))
     # exit()
 
-    reg_str = r"""(Stream |Second Pass|File)(?:(\d+)\/(\d+))*: +\d+%\|[ ▏▎▍▌▋▊▉█]{10}\| +(\d+\.*\d*)\/(10*) \[([\d:,\?]+)<([\d:,\?]+), +([\d\.,?]+)(it\/s|s\/it)\](?:.*)\./(.*)\.log"""
+    reg_str = r"""(Stream |Second Pass|File|Running Command)(?:(\d+)\/(\d+))*: +\d+%\|[ ▏▎▍▌▋▊▉█]{10}\| +(\d+\.*\d*)\/(10*) \[([\d:,\?]+)<([\d:,\?]+), +([\d\.,?]+)(it\/s|s\/it)\](?:.*)\./(.*)\.log"""
     regex = re.compile(reg_str)
 
     for line in sys.stdin:
@@ -271,16 +271,25 @@ def main() -> None:
                 normal_info = info_one.ljust(width - len(info_two) - len(extra_info)) + extra_info + info_two
                 info = normal_info
 
+        background_bright = colorama.Back.WHITE
+        foreground_bright = colorama.Back.WHITE
+        if "Running Command" in foo:
+            percentage_bar = f"{percentage_bar}"
+            background_bright = colorama.Back.BLUE
+            foreground_bright = colorama.Back.GREEN
+
         if len(info) <= len(percentage_bar):
             percentage_bar = list(percentage_bar)
 
             for i, (p, e) in enumerate(zip(percentage_bar[::-1], info[::-1])):
-                if e == " ":
+                if p != "█" and e == " ":
                     continue
+                elif p == " " and e == "█":
+                    percentage_bar[len(percentage_bar) - i - 1] = colorama.Fore.BLACK + colorama.Back.YELLOW  + e + colorama.Style.RESET_ALL  # noqa: E221
                 elif p == " ":
-                    percentage_bar[len(percentage_bar) - i - 1] = e  # white black
+                    percentage_bar[len(percentage_bar) - i - 1] = foreground_bright   + colorama.Back.BLACK   + e + colorama.Style.RESET_ALL  # noqa: E221  # white black
                 elif p == "█":
-                    percentage_bar[len(percentage_bar) - i - 1] = colorama.Fore.BLACK + colorama.Back.WHITE   + e + colorama.Style.RESET_ALL  # noqa: E221
+                    percentage_bar[len(percentage_bar) - i - 1] = colorama.Fore.BLACK + background_bright     + e + colorama.Style.RESET_ALL  # noqa: E221
                 elif p == "▏":  # 1
                     percentage_bar[len(percentage_bar) - i - 1] = colorama.Fore.CYAN  + colorama.Back.BLACK   + e + colorama.Style.RESET_ALL  # noqa: E221
                 elif p == "▎" or p == "▍":  # 2 or 3
@@ -290,7 +299,7 @@ def main() -> None:
                 elif p == "▋" or p == "▊":  # 5 or 6
                     percentage_bar[len(percentage_bar) - i - 1] = colorama.Fore.BLUE  + colorama.Back.CYAN    + e + colorama.Style.RESET_ALL  # noqa: E221
                 elif p == "▉":  # 7
-                    percentage_bar[len(percentage_bar) - i - 1] = colorama.Fore.BLUE  + colorama.Back.WHITE   + e + colorama.Style.RESET_ALL  # noqa: E221
+                    percentage_bar[len(percentage_bar) - i - 1] = colorama.Fore.BLUE  + background_bright     + e + colorama.Style.RESET_ALL  # noqa: E221
                 else:
                     percentage_bar[len(percentage_bar) - i - 1] = colorama.Fore.BLACK + colorama.Back.YELLOW  + e + colorama.Style.RESET_ALL  # noqa: E221
 
