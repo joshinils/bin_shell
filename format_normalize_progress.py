@@ -209,7 +209,9 @@ def main() -> None:
         if "Running Command" in foo:
             total_passes = 1
 
-        total_percent = (percent_done / total_passes + 100 / total_passes) % 100
+        total_percent = percent_done / total_passes + 100 / total_passes
+        if total_percent > 100:
+            total_percent %= 100
         time_elapsed = fix_time_format(time_elapsed_str)
         time_remaining = fix_time_format(time_remaining_str)
 
