@@ -204,7 +204,11 @@ def main() -> None:
 
         title = trunc_filename(title)
 
-        total_percent = percent_done / 2 + 50
+        total_passes = 2
+        if "Running Command" in foo:
+            total_passes = 2
+
+        total_percent = (percent_done / total_passes + 100 / total_passes) % 100
         time_elapsed = fix_time_format(time_elapsed_str)
         time_remaining = fix_time_format(time_remaining_str)
 
@@ -215,7 +219,7 @@ def main() -> None:
             time_per_stream = time_elapsed + time_remaining
             streams_left = stream_total - stream_current
 
-            total_percent = ((stream_current - 1) * 100 + percent_done) / stream_total / 2
+            total_percent = ((stream_current - 1) * 100 + percent_done) / stream_total / total_passes
 
             total_time_left = time_remaining + time_per_stream * streams_left + stream_total * time_per_stream
         else:
