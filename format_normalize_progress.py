@@ -287,7 +287,9 @@ def main() -> None:
             percentage_bar = list(percentage_bar)
 
             for i, (p, e) in enumerate(zip(percentage_bar[::-1], info[::-1])):
-                if p != "█" and e == " ":
+                if p in "▏▎▍▌▋▊▉" and e == " ":
+                    percentage_bar[len(percentage_bar) - i - 1] = foreground_bright   + colorama.Back.BLACK   + e + colorama.Style.RESET_ALL  # noqa: E221
+                elif p != "█" and e == " ":
                     continue
                 elif p == " " and e == "█":
                     percentage_bar[len(percentage_bar) - i - 1] = colorama.Fore.BLACK + colorama.Back.YELLOW  + e + colorama.Style.RESET_ALL  # noqa: E221
