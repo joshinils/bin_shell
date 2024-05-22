@@ -195,12 +195,13 @@ def main() -> None:
 
         percent_done /= percent_total / 100.0  # fix for 1/ 1 progress for file saving progress bar
 
+        stream_current = 1
+        stream_total = 100
         try:
             stream_current = int(stream_current_str)
             stream_total = int(stream_total_str)
         except Exception:
-            stream_current = 1
-            stream_total = 100
+            pass
 
         title = trunc_filename(title)
 
