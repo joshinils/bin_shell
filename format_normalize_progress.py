@@ -196,7 +196,7 @@ def main() -> None:
         percent_done /= percent_total / 100.0  # fix for 1/ 1 progress for file saving progress bar
 
         stream_current = 1
-        stream_total = 100
+        stream_total = 1
         try:
             stream_current = int(stream_current_str)
             stream_total = int(stream_total_str)
@@ -279,7 +279,7 @@ def main() -> None:
         background_bright = colorama.Back.WHITE
         foreground_bright = colorama.Back.WHITE
         if "Running Command" in foo:
-            percentage_bar = f"{percentage_bar}"
+            # percentage_bar = f"{percentage_bar}"
             background_bright = colorama.Back.BLUE
             foreground_bright = colorama.Back.GREEN
 
