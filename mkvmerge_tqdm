@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+import re
+import subprocess
+import sys
+from typing import Iterator, List
+
+import ffmpeg_progress_yield
+from tqdm import tqdm
+
+TIME_REGEX = re.compile(r"Progress: (?P<percent>\d+)%")
+
+
+def run_command_with_progress(cmd: List[str], popen_kwargs=None,) -> Iterator[float]:
+    """
+    Run an mkvmerge command, trying to capture the process output and yield the percentage.
+    Yields the progress in percent.
+
+    Args:
+        popen_kwargs (dict, optional): A dict to specify extra arguments to the popen call, e.g. { creationflags: CREATE_NO_WINDOW }
+
+    Raises:
+        RuntimeError: If the command fails, an exception is raised.
+
+    Yields:
+        Iterator[float]: A generator that yields the progress in percent.
+    """
+
+    base_popen_kwargs = {
+        "stdin": subprocess.PIPE,  # Apply stdin isolation by creating separate pipe.
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.STDOUT,
+        "universal_newlines": False,
+    }
+
+    stderr = []
+    if popen_kwargs is not None:
+        base_popen_kwargs.update(popen_kwargs)
+
+    process: subprocess.Popen = subprocess.Popen(
+        cmd,
+        **base_popen_kwargs,
+    )  # type: ignore
+
+    yield 0
+
+    while True:
+        if process.stdout is None:
+            continue
+
+        stdout_line: str = process.stdout.readline().decode("utf-8", errors="replace").strip()
+        stderr_line: str = process.stderr.readline().decode("utf-8", errors="replace").strip()
+
+        if stdout_line == "" and process.poll() is not None:
+            break
+
+        stderr.append(stderr_line.strip())
+
+        progress_percent_stdout = TIME_REGEX.search(stdout_line)
+        progress_percent_stderr = TIME_REGEX.search(stderr_line)
+        if progress_percent_stdout:
+            percent = progress_percent_stdout.groupdict().get("percent", None)
+            if percent is not None:
+                yield float(percent)
+        elif progress_percent_stderr:
+            percent = progress_percent_stderr.groupdict().get("percent", None)
+            if percent is not None:
+                yield float(percent)
+
+    if process is None or process.returncode != 0:
+        _pretty_stderr = "\n".join(stderr)
+        raise RuntimeError(f"Error running command {cmd}: {_pretty_stderr}")
+
+    yield 100
+    process = None
+
+
+if __name__ == "__main__":
+    with tqdm(
+        total=100,
+        position=1,
+        desc="Running mkvmerge",
+    ) as pbar:
+        for progress in run_command_with_progress(["mkvmerge"] + sys.argv[1:]):
+            pbar.update(progress - pbar.n)
