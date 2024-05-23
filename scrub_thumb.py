@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
 import sys
+from collections import defaultdict
+
 import cv2
 import numpy as np
 import tqdm
-from python_funs.video import get_frame_at, extract_frame, get_width, get_frames, get_framerate, get_duration
-from collections import defaultdict
+
+from python_funs.video import (
+    extract_frame, get_duration, get_frame_at, get_framerate, get_frames,
+    get_width
+)
+
 
 def main() -> None:
     path = sys.argv[1]

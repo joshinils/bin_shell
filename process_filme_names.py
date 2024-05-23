@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 import csv
-from typing import Dict, Tuple, Set, TypedDict, Union, List
 import itertools
-from pymediainfo import MediaInfo
-from collections import defaultdict
-import pathlib
-import tqdm
-import pickle
 import os
+import pathlib
+import pickle
+from collections import defaultdict
+from typing import Dict, List, Set, Tuple, TypedDict, Union
 
+import tqdm
+from pymediainfo import MediaInfo
 
 pickled_filename = pathlib.Path(".movie_languages_meta.pkl")
 
