@@ -206,7 +206,7 @@ def main() -> None:
         title = trunc_filename(title)
 
         total_passes = 2
-        if "Running Command" in foo:
+        if "Running Command" in foo or "Running ffmpeg" in foo:
             total_passes = 1
 
         total_percent = percent_done / total_passes + 100 / total_passes
@@ -280,7 +280,7 @@ def main() -> None:
 
         background_bright = colorama.Back.WHITE
         foreground_bright = colorama.Back.WHITE
-        if "Running Command" in foo:
+        if "Running Command" in foo or "Running ffmpeg" in foo:
             # percentage_bar = f"{percentage_bar}"
             background_bright = colorama.Back.BLUE
             foreground_bright = colorama.Back.GREEN
