@@ -154,7 +154,7 @@ def main() -> None:
     #     print(f"{i:03}", get_percentage_bar(i, hundred, 1, 1))
     # exit()
 
-    reg_str = r"""(Stream |Second Pass|File|Running Command)(?:(\d+)\/(\d+))*: +\d+%\|[ ▏▎▍▌▋▊▉█]{10}\| +(\d+\.*\d*)\/(10*) \[([\d:,\?]+)<([\d:,\?]+), +([\d\.,?]+)(it\/s|s\/it)\](?:.*)\./(.*)\.log"""
+    reg_str = r"""(Stream |Second Pass|File|Running Command|Running ffmpeg)(?:(\d+)\/(\d+))*: +\d+%\|[ ▏▎▍▌▋▊▉█]{10}\| +(\d+\.*\d*)\/(10*) \[([\d:,\?]+)<([\d:,\?]+), +([\d\.,?]+)(it\/s|s\/it)\](?:.*)\./(.*)\.log"""
     regex = re.compile(reg_str)
 
     for line in sys.stdin:
