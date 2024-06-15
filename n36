@@ -1,0 +1,3 @@
+#!/bin/bash
+ssh -t jl@l-nas36 "cd \"$PWD\"; exec \$SHELL --login"
+
