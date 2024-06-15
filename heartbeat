@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+import datetime
+import time
+import sys
+
+
+def print_beat(time: datetime, message: str = ""):
+    print(f"{time:%Y-%m-%d %H:%M:%S.%f}: Heartbeat {message}")
+
+
+def send_heartbeat(mod_number: float):
+    current_time = datetime.datetime.now()
+    print_beat(current_time, "initialized")
+    while True:
+        current_time = datetime.datetime.now()
+        time_to_sleep = max(1 / 100000, mod_number - current_time.second % mod_number - current_time.microsecond / 1000000 - 1 / 10000)
+        # print_beat(current_time, f"debug {current_time.second % mod_number=} {current_time.microsecond=} {mod_number=} {time_to_sleep=}")
+        if current_time.second % mod_number == 0:
+            print_beat(current_time)
+        time.sleep(time_to_sleep)
+
+
+if __name__ == "__main__":
+    interval = 60
+    if len(sys.argv) > 1:
+        interval = max(1, min(float(sys.argv[1]), 60))
+    send_heartbeat(interval)
