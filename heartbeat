@@ -6,7 +6,7 @@ import sys
 
 
 def print_beat(time: datetime, message: str = ""):
-    print(f"{time:%Y-%m-%d %H:%M:%S.%f}: Heartbeat {message}")
+    print(f"\n{time:%Y-%m-%d %H:%M:%S.%f}: Heartbeat {message}")
 
 
 def send_heartbeat(mod_number: float):
