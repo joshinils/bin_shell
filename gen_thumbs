@@ -41,10 +41,13 @@ if [ "$frames" -lt $((grid * grid)) ]; then
     exit 1
 fi
 
-framerate=$(ffmpeg -i "$1" 2>&1 | sed -n "s/.*, \(.*\) fp.*/\1/p")
+framerate_ffmpeg=$(ffmpeg -i "$1" 2>&1 | sed -n "s/.*, \(.*\) fp.*/\1/p")
+framerate=$(mediainfo "$1" --language=raw | sed -n "s/FrameRate\/String *: \([[:digit:]]\+\.[[:digit:]]\+\).*fps/\1/p" | head -n 1) # "FrameRate/String                 : 59.940 (59940/1000) fps"
+                                                                                                                                    # "FrameRate/String                 : 59.830 fps"
+
 skip_duration=0$(echo "(($frames - ($grid * $grid)) / ($grid * $grid + 1)) / $framerate"|bc -l)
-n_th_frame=$(echo "scale=0; x = $frames / ($grid * $grid + 1); if (x < 1) x = 1; x" | bc)
-echo "skip_duration=$skip_duration grid=$grid frames=$frames n_th_frame=$n_th_frame framerate=$framerate"
+n_th_frame=$(echo "scale=0; x = $frames / ($grid * $grid + 1) / ($framerate / $framerate_ffmpeg); if (x < 1) x = 1; x" | bc)
+echo "skip_duration=$skip_duration grid=$grid frames=$frames n_th_frame=$n_th_frame framerate=$framerate framerate_ffmpeg=$framerate_ffmpeg"
 
 # ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=320:180,tile=${grid}x${grid}" "${out_name// /_}" -y </dev/null
 nice -n 20 ionice -c 3 ffmpeg -hide_banner -loglevel error -stats -ss "$skip_duration" -i "./${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=iw*min(1\, 2560/(iw*$grid)):ih*min(1\, 2560/(iw*$grid))/sar,tile=${grid}x${grid}" "./${out_name}" "${yes_no}" </dev/null
