@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+diff --color=always <(cd "$1" || exit; du -b -- *) <(cd "$2" || exit; du -b -- *) -W "$(tput cols)" -y --suppress-common-lines
+echo
+diff --color=always <(cd "$1" || exit; find . -maxdepth 1 | sort ) <(cd "$2" || exit; find . -maxdepth 1| sort) -W "$(tput cols)" -y --suppress-common-lines
