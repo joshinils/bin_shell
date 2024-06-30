@@ -46,7 +46,7 @@ framerate=$(mediainfo "$1" --language=raw | sed -n "s/FrameRate\/String *: \([[:
                                                                                                                                     # "FrameRate/String                 : 59.830 fps"
 
 skip_duration=0$(echo "(($frames - ($grid * $grid)) / ($grid * $grid + 1)) / $framerate"|bc -l)
-n_th_frame=$(echo "scale=0; x = $frames / ($grid * $grid + 1) / ($framerate / $framerate_ffmpeg); if (x < 1) x = 1; x" | bc)
+n_th_frame=$(echo "scale=0; x = $frames / ($grid * $grid + 1) * ($framerate_ffmpeg / $framerate); if (x < 1) x = 1; x" | bc)
 echo "skip_duration=$skip_duration grid=$grid frames=$frames n_th_frame=$n_th_frame framerate=$framerate framerate_ffmpeg=$framerate_ffmpeg"
 
 # ffmpeg -hide_banner -loglevel error -stats -ss 00:00:10 -i "${1}" -frames 1 -vf "select=not(mod(n\,${n_th_frame})),scale=320:180,tile=${grid}x${grid}" "${out_name// /_}" -y </dev/null
