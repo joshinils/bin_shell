@@ -21,10 +21,10 @@ def main(path: pathlib.Path):
     langs_dict = defaultdict(list)
 
     for a_track in media_info.audio_tracks:
-        d = a_track.to_data()
+        format_dict = a_track.to_data()
 
-        format_commercial_name = d.get('commercial_name')
-        format = d.get('format', format_commercial_name)
+        format_commercial_name = format_dict.get('commercial_name')
+        format = format_dict.get('format', format_commercial_name)
         if format != format_commercial_name:
             if format in format_commercial_name:
                 format = format_commercial_name
@@ -33,7 +33,7 @@ def main(path: pathlib.Path):
             else:
                 format += " " + format_commercial_name
 
-        langs_dict[d.get('language', "und")].append(f"{d.get('channel_s')}×{format}")
+        langs_dict[format_dict.get('language', "und")].append(f"{format_dict.get('channel_s')}×{format}")
         # print(f"{d.get('title')=}")
         # print(f"{d.get('language')=}")
         # print(f"{d.get('channel_s')=}")
@@ -70,16 +70,17 @@ def main(path: pathlib.Path):
 
     path_str += ", ".join(sorted(items_multi) + sorted(items_single))
 
+    de_en_both = ""
     if en is False and de is False:
-        path_str += " no_lang"
+        de_en_both = " no_lang"
     elif en is True and de is False:
-        path_str += " single en"
+        de_en_both = " single en"
     elif en is False and de is True:
-        path_str += " single de"
+        de_en_both = " single de"
     elif en is True and de is True:
-        path_str += " de_en_both"
+        de_en_both = " de_en_both"
 
-    path_str = f"{total_multi_streams}— " + path_str
+    path_str = f"{total_multi_streams}— {de_en_both}/{path_str}"
 
     path_str = path_str.replace("Dolby Digital Plus", "DDP")
     path_str = path_str.replace("Dolby Digital", "DD")
@@ -94,7 +95,7 @@ def main(path: pathlib.Path):
     print(f"{p=}")
 
     try:
-        p.mkdir(exist_ok=True)
+        p.mkdir(parents=True, exist_ok=True)
         print(path)
         path.rename(p / path)
         pathlib.Path(str(path).replace(".mkv", ".png")).rename(p / str(path).replace(".mkv", ".png"))
@@ -103,11 +104,12 @@ def main(path: pathlib.Path):
         # filename too long, ignore
         pass
 
+
 if __name__ == "__main__":
     parser = TArgumentParser(description='sorts video files into folders according to their audio track types and counts')
 
     args = parser.parse_args()
-    args.paths: List[str]
+    # args.paths: List[str]
     paths = args.paths
 
     for path in paths:
