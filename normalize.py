@@ -244,6 +244,8 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         bitrate_list = ["-b:a", f"{audio_bitrate}"]
 
     commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-ac {num_channels} -dsurex_mode 1"]
+
+    # commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-ac {num_channels} -dsurex_mode 1 -af channelmap=channel_layout=4.1"]
     # commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", "aac"] + bitrate_list + [f"{path}", "-o", f"{out_name}", "-e", f"-ac {num_channels} -dsurex_mode 1"]
 
     # do not pass -ac num_channels if there is weirdness with 3 channels, only happened once so far, so i don't care to implement it, nor would I know how to.
@@ -251,6 +253,9 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
     # ffmpeg seem s to think that -ac 3 means 2.1, whereas 'mignight in paris' has two 3.0 audio streams
     # uncomment the following line:
     # commands = ["ffmpeg-normalize", "-pr", "-f", "-ar", f"{sample_rate}", "-c:a", codec] + bitrate_list + [f"{path}", "-o", f"{out_name}"]
+    #
+    # one file has only stereo channels present, but reports itself as stereo or 2.1 sometimes, with 3 channels, wtf.
+    # I've chosen to downmix that with ffmpeg, to stereo via -ac 2
 
     print("    ", commands)
     try:

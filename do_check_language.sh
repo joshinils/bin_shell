@@ -18,7 +18,11 @@ find . -type d -empty -delete
 mkdir -p ../check_language
 mv -n -- * ../check_language
 for d in */ ; do
-    echo "$d"
+    echo d"'$d'"
+    for dd in "$d"* ; do
+        echo d_dd"'$d$dd'"
+        mv -n "$dd"/* "../check_language/$dd"
+    done
     mv -n "$d"/* ../check_language/"$d"
 done
 find . -type d -empty -delete

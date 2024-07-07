@@ -3,9 +3,9 @@
 import pathlib
 from collections import defaultdict
 from typing import List
-
-from pymediainfo import MediaInfo
 from tap import Tap
+import subprocess
+import json
 
 
 class TArgumentParser(Tap):
@@ -15,36 +15,54 @@ class TArgumentParser(Tap):
         self.add_argument('paths', nargs="+")
 
 
-def main(path: pathlib.Path):
-    media_info = MediaInfo.parse(path)
+def get_mkvmerge_json(path: pathlib.Path) -> dict:
+    cmd = ["mkvmerge", "-J", str(path)]
+    try:
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True, text=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing mkvmerge: {e}")
+        raise Exception
+    return json.loads(result.stdout)
 
+
+def main(path: pathlib.Path) -> None:
     langs_dict = defaultdict(list)
 
-    for a_track in media_info.audio_tracks:
-        format_dict = a_track.to_data()
+    metadata_json = get_mkvmerge_json(path).get("tracks", {})
+    elem: dict
+    for elem in metadata_json:
+        if elem.get("type") != "audio":
+            continue
+        # print(type(elem), elem)
 
-        format_commercial_name = format_dict.get('commercial_name')
-        format = format_dict.get('format', format_commercial_name)
-        if format != format_commercial_name:
-            if format in format_commercial_name:
-                format = format_commercial_name
-            elif format_commercial_name in format:
+        flag_visual_impaired = elem.get("properties", {}).get("flag_visual_impaired")
+        flag_commentary = elem.get("properties", {}).get("flag_commentary")
+        language = elem.get("properties", {"language_ietf": "und"}).get("language_ietf", "und")
+        channel_count = elem.get("properties", {"audio_channels": 0}).get("audio_channels", 0)
+
+        if language == "und":
+            language = elem.get("properties", {"language": "und"}).get("language", "und")
+            if language == "ger":
+                language = "de"
+            elif language == "eng":
+                language = "en"
+            elif language == "und":
                 pass
             else:
-                format += " " + format_commercial_name
+                print(f"{language=} found, not sure what to do with it.")
 
-        langs_dict[format_dict.get('language', "und")].append(f"{format_dict.get('channel_s')}×{format}")
-        # print(f"{d.get('title')=}")
-        # print(f"{d.get('language')=}")
-        # print(f"{d.get('channel_s')=}")
-        # print(f"{d.get('delay')=}")
-        # print(f"{d.get('delay_relative_to_video')=}")
-        # print(f"{d.get('codec_id')=}")
-        # print(f"{d.get('commercial_name')=}")
-        # print(f"{d.get('format')=}")
-        # print(f"{d.get('format_info')=}")
-        # # pprint.pprint(d)
-        # print()
+        if flag_commentary:
+            language += "-co"
+        if flag_visual_impaired:
+            language += "-vi"
+        language += f"*{channel_count}"
+
+        format = elem.get("codec")
+        # print(f"{flag_commentary=} {flag_visual_impaired=} {language=} {format=}")
+
+        print(f"{format=}")
+        langs_dict[language].append(f"{format}")
+        print()
 
     items_multi = []
     items_single = []
@@ -54,14 +72,16 @@ def main(path: pathlib.Path):
     en = False
     for lang_code, stream_type in langs_dict.items():
         print(lang_code, len(stream_type))
-        de = lang_code == "de" or de
-        en = lang_code == "en" or en
+        de = lang_code.split("*")[0] == "de" or de
+        en = lang_code.split("*")[0] == "en" or en
         if len(stream_type) > 1 or lang_code == "und":  # or "d=" in v[0]:
-            total_multi_streams += len(stream_type)
             items_multi.append(f"{len(stream_type)}×{lang_code}[{', '.join(stream_type)}]")
+            if "-co" in lang_code:
+                continue
+            total_multi_streams += len(stream_type)
         elif len(stream_type) <= 1 or lang_code == "und":
-            total_single_streams += len(stream_type)
             items_single.append(f"{len(stream_type)}×{lang_code}[{', '.join(stream_type)}]")
+            total_single_streams += len(stream_type)
 
     path_str = ""
 
