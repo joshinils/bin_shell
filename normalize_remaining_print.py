@@ -4,7 +4,7 @@ import os
 import pathlib
 import pickle
 from typing import Dict, Tuple
-
+import glob
 from normalize import get_amount_of_audio_streams
 
 extension_keep: Tuple[str] = (
@@ -133,9 +133,28 @@ def main():
     streams_size_name.sort(key=lambda x: x[1], reverse=False)
     streams_size_name.sort(key=lambda x: x[0], reverse=False)
     if len(streams_size_name) > 0:
+        printables = []
+        log_names = list(set([fname.removesuffix(".log") for fname in glob.glob(f"*.working.log") + glob.glob(f"*.working") if os.path.isfile(fname)]))
+
+        max_length_working_now = 0
+        for stream_count, size, fname in streams_size_name:
+            working_now = 0
+            for log_name in log_names:
+                if log_name.startswith(fname):
+                    working_now += 1
+            max_length_working_now = max(max_length_working_now, working_now)
+
+        for stream_count, size, fname in streams_size_name:
+            working_now = 0
+            for log_name in log_names:
+                if log_name.startswith(fname):
+                    working_now += 1
+            working_now_str = ' ' * (max_length_working_now - working_now) + '*' * working_now
+            printables.append(f"{stream_count:2d}, {make_size_str(size)}, {working_now_str} {fname.replace('Link to makeMKV_out/', '')}")
+
         print("Waiting:")
-        for stream_count, size, name in streams_size_name:
-            print(f"{stream_count:2d}, {make_size_str(size)}, {name.replace('Link to makeMKV_out/', '')}")
+        for line in printables:
+            print(line)
     else:
         print("Waiting: None")
 

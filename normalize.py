@@ -296,7 +296,7 @@ def make_lockfile_name(path: pathlib.Path, number: Optional[int] = None) -> path
         path_str = path_str.replace(f"{sub_path}", "")
 
     if number is None:
-        path_str = path_str + ".working"
+        path_str =f"{path_str}_ggg.working"
     else:
         path_str =f"{path_str}_{number:03d}.working"
 
