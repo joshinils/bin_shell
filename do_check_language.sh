@@ -19,11 +19,13 @@ mkdir -p ../check_language
 mv -n -- * ../check_language
 for d in */ ; do
     echo d"'$d'"
-    for dd in "$d"* ; do
+    mkdir -p "../check_language/$d"
+    for dd in "$d"/* ; do
         echo d_dd"'$d$dd'"
+        mkdir -p "../check_language/$dd"
         mv -n "$dd"/* "../check_language/$dd"
     done
-    mv -n "$d"/* ../check_language/"$d"
+    mv -n "$d"/* "../check_language/$d"
 done
 find . -type d -empty -delete
 cd ..
