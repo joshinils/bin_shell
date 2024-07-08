@@ -301,7 +301,13 @@ def make_lockfile_name(path: pathlib.Path, number: Optional[int] = None) -> path
         path_str =f"{path_str}_{number:03d}.working"
 
     path_str = path_str.replace(".audio-", "_")
+
+    path_str = path_str.replace(".mkv_ggg.working", ".working")
     path_str = path_str.replace(".mkv.working", ".working")
+
+    # remove ggg placeholder for merging, if there is a number directly before it
+    for i in range(10):
+        path_str = path_str.replace(f"{i}_ggg", f"{i}")
 
     return pathlib.Path(path_str)
 
