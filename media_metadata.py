@@ -6,6 +6,11 @@ from typing import List
 from tap import Tap
 import subprocess
 import json
+import sys
+
+
+def eprint(*args, **kwargs) -> None:  # type: ignore
+    print(*args, file=sys.stderr, **kwargs)
 
 
 class TArgumentParser(Tap):
@@ -42,14 +47,41 @@ def main(path: pathlib.Path) -> None:
 
         if language == "und":
             language = elem.get("properties", {"language": "und"}).get("language", "und")
-            if language == "ger":
-                language = "de"
-            elif language == "eng":
-                language = "en"
-            elif language == "und":
-                pass
+            lang_dict = {  # ISO-639-2 -> ISO-639-1
+                "ger": "de",
+                "eng": "en",
+                "fre": "fr",
+                "jpn": "jp",
+                "ita": "it",
+                "spa": "es",
+                "por": "pt",
+                "pol": "pl",
+                "rus": "ru",
+                "tha": "th",
+                "tur": "tr",
+                "chi": "zh",
+                "dut": "nl",
+                "fin": "fi",
+                "swe": "sv",
+                "hun": "hu",
+                "cze": "cs",
+                "dan": "da",
+                "cat": "ca",
+                "rum": "ro",
+                "ukr": "uk",
+                "kor": "ko",
+                "heb": "he",
+                "nor": "no",
+                "hin": "hi",
+                "gre": "el",
+                "ice": "is",
+                "ind": "id",
+                "und": "und",
+            }
+            if language in lang_dict:
+                language = lang_dict.get(language, language)
             else:
-                print(f"{language=} found, not sure what to do with it.")
+                eprint(f"{language=} found, not sure what to do with it.")
 
         if flag_commentary:
             language += "-co"
