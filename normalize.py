@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
 import multiprocessing as mp
 import os
 import pathlib
@@ -11,12 +12,13 @@ from typing import Dict, Final, List, Optional, Tuple, TypedDict
 
 import tqdm
 
-normalized_temp_single: Final[pathlib.Path] = pathlib.Path("normalized_temp_single")  # single extracted audio
-normalized_temp_single_staging: Final[pathlib.Path] = pathlib.Path("normalized_temp_single_staging")  # single extracted audio, incomplete extract
-normalized_temp: Final[pathlib.Path] = pathlib.Path("normalized_temp")  # single normalized audio
-normalized_staging: Final[pathlib.Path] = pathlib.Path("normalized_staging")  # compile combined file here
-normalized_output: Final[pathlib.Path] = pathlib.Path("normalized")  # finished combined file
-normalized_done: Final[pathlib.Path] = pathlib.Path("normalized_done")  # original file, not to be deleted
+today = datetime.datetime.today().isoformat()[0:10]
+normalized_temp_single:         Final[pathlib.Path] = pathlib.Path(f"normalized_{today}_temp_single")               # noqa: E241 # single extracted audio
+normalized_temp_single_staging: Final[pathlib.Path] = pathlib.Path(f"normalized_{today}_temp_single_staging")       # noqa: E241 # single extracted audio, incomplete extract
+normalized_temp:                Final[pathlib.Path] = pathlib.Path(f"normalized_{today}_temp")                      # noqa: E241 # single normalized audio
+normalized_staging:             Final[pathlib.Path] = pathlib.Path(f"normalized_{today}_staging")                   # noqa: E241 # compile combined file here
+normalized_output:              Final[pathlib.Path] = pathlib.Path(f"normalized_{today}")                           # noqa: E241 # finished combined file
+normalized_done:                Final[pathlib.Path] = normalized_output / pathlib.Path(f"normalized_{today}_done")  # noqa: E241 # original file, not to be deleted
 
 
 def print_lineno() -> str:
@@ -230,7 +232,7 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
         1:  64_000,  # noqa: E241  # mono 32 * 2
         2: 128_000,  # stereo 32 *  4
         3: 160_000,  # 3.0  # 32 *  5, wegen "Midnight in Paris"
-        4: 176_000,  # 4.0  # 32 *  5.5, wegen "Bus Stop_1956" layout: L R C Cb, Surround 4.0
+        4: 176_000,  # 4.0  # 32 *  5.5, wegen "Bus Stop_1956" layout: L R C Cb, Surround 4.0  # oopsie, opus kann nur quadrophonic also FL FR RL RR
         # NOTIZ zu 4.0 opus kann kein L R C Cb layout, nur Lf Rf Lf Lb
         5: 192_000,  # 4.1, # 32 *  6, wegen "Alien_1978", 5-kanal
         6: 320_000,  # 5.1, # 32 * 10
@@ -296,9 +298,9 @@ def make_lockfile_name(path: pathlib.Path, number: Optional[int] = None) -> path
         path_str = path_str.replace(f"{sub_path}", "")
 
     if number is None:
-        path_str =f"{path_str}_ggg.working"
+        path_str = f"{path_str}_ggg.working"
     else:
-        path_str =f"{path_str}_{number:03d}.working"
+        path_str = f"{path_str}_{number:03d}.working"
 
     path_str = path_str.replace(".audio-", "_")
 
@@ -344,7 +346,7 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
 
     lock_file_name.unlink()
     logfile_name.touch()
-    logfile_name.unlink()
+    # logfile_name.unlink()
     return (normalized_path, path)
 
 
@@ -383,7 +385,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         error = sub_process_result.returncode != 0 and sub_process_result.returncode != 1
 
         if status_ok or warning:
-            normalized_done.mkdir(exist_ok=True)
+            normalized_done.mkdir(exist_ok=True, parents=True)
             video_path.rename(normalized_done / video_path.name)
 
             normalized_output.mkdir(exist_ok=True)
