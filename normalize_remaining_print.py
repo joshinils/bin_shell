@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+import glob
 import os
 import pathlib
 import pickle
 from typing import Dict, Tuple
-import glob
+
 from normalize import get_amount_of_audio_streams
 
 extension_keep: Tuple[str] = (

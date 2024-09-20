@@ -4,12 +4,12 @@ framerate=$(ffprobe -v error -select_streams v -of default=noprint_wrappers=1:no
 smoothing_val=$(echo $framerate / 4 | bc)
 smoothing=$(( $smoothing_val > 10 ? $smoothing_val : 10 ))
 
-crf=00
+crf=22
 out_name="${1}"_stab
 
 
-ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabdetect=accuracy=15:result="${out_name}.trf" -f null - -y
-ffmpeg -hide_banner -loglevel error -stats -i "${1}" -vf vidstabtransform=zoom=0:crop=black:optzoom=0:smoothing="${smoothing}":input="${out_name}.trf" -crf ${crf} "${out_name}.mkv" -y
+ffmpeg_tqdm -hide_banner -loglevel error -stats -i "${1}" -vf vidstabdetect=accuracy=15:result="${out_name}.trf" -f null - -y
+ffmpeg_tqdm -hide_banner -loglevel error -stats -i "${1}" -vf vidstabtransform=zoom=0:crop=black:optzoom=0:smoothing="${smoothing}":input="${out_name}.trf" -crf ${crf} "${out_name}.mkv" -y
 
 rm -f "${out_name}.trf"
 

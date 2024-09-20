@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
 # make callable from anywhere
-cd "$( dirname "${BASH_SOURCE[0]}" )"
+cd "$( dirname "${BASH_SOURCE[0]}" )" || exit
 
 echo ""
 
 # removed -s option from curl
-state_json=$(curl --connect-timeout 1 --max-time 1 --retry 60 --retry-delay 0 --retry-max-time 60 -X GET --url $(cat ~/settings/hue_lights_secret)/lights/$1)
-echo $state_json
-is_on=$(echo $state_json | jq -r '.state.on')
-light_name=$(echo $state_json | jq -r '.name')
+state_json=$( curl --connect-timeout 1 --max-time 1 --retry 60 --retry-delay 0 --retry-max-time 60 -X GET --url "$(cat ~/settings/hue_lights_secret)/lights/$1" )
+echo "$state_json"
+is_on=$(echo "$state_json" | jq -r '.state.on')
+light_name=$(echo "$state_json" | jq -r '.name')
 
-echo is_on $is_on
-echo light_name $light_name
+echo is_on "$is_on"
+echo light_name "$light_name"
 
 if [ -z ${2} ]; then
     if [ $is_on == "true" ]; then
@@ -36,7 +36,7 @@ echo post_return $post_return
 success=$(echo ${post_return:1:-1} | jq -r '.success')
 echo success $success
 
-if [[ "null" != $success ]]; then
+if [[ "null" != "$success" ]]; then
     echo -n \"$light_name\"
     if [ -z ${2} ]; then
         echo -n " toggled to "

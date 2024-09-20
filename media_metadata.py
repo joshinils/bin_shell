@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+import json
 import pathlib
+import subprocess
+import sys
 from collections import defaultdict
 from typing import List
+
 from tap import Tap
-import subprocess
-import json
-import sys
 
 
 def eprint(*args, **kwargs) -> None:  # type: ignore

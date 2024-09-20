@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+import argparse
+import glob
 import os
+import pathlib
 import typing
 from collections import defaultdict
-import pathlib
-import glob
-import argparse
 
 
 def get_files_here() -> typing.Iterator[str]:

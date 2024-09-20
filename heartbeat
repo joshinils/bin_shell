@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import datetime
-import time
 import sys
+import time
 
 
 def print_beat(time: datetime, message: str = ""):
