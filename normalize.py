@@ -346,7 +346,7 @@ def extract_and_normalize_single_audio_stream(path_number: Tuple[pathlib.Path, i
 
     lock_file_name.unlink()
     logfile_name.touch()
-    # logfile_name.unlink()
+    logfile_name.unlink()
     return (normalized_path, path)
 
 
