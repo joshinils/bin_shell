@@ -14,12 +14,14 @@ remaining_opus=$(find -- *.opus 2>/dev/null|wc -l)
 remaining_m4a=$(find -- *.m4a 2>/dev/null|wc -l)
 remaining=$((remaining_mp4 + remaining_mkv + remaining_ogg + remaining_webm + remaining_opus + remaining_m4a))
 
-done_mp4=$(find normalized/*.mp4 2>/dev/null|wc -l)
-done_mkv=$(find normalized/*.mkv 2>/dev/null|wc -l)
-done_ogg=$(find normalized/*.ogg 2>/dev/null|wc -l)
-done_webm=$(find normalized/*.webm 2>/dev/null|wc -l)
-done_opus=$(find normalized/*.opus 2>/dev/null|wc -l)
-done_m4a=$(find normalized/*.m4a 2>/dev/null|wc -l)
+today=$(date +"%Y-%m-%d")
+
+done_mp4=$(find "normalized_${today}"/*.mp4 2>/dev/null|wc -l)
+done_mkv=$(find "normalized_${today}"/*.mkv 2>/dev/null|wc -l)
+done_ogg=$(find "normalized_${today}"/*.ogg 2>/dev/null|wc -l)
+done_webm=$(find "normalized_${today}"/*.webm 2>/dev/null|wc -l)
+done_opus=$(find "normalized_${today}"/*.opus 2>/dev/null|wc -l)
+done_m4a=$(find "normalized_${today}"/*.m4a 2>/dev/null|wc -l)
 done_count=$((done_mp4 + done_mkv + done_ogg + done_webm + done_opus + done_m4a))
 
 total=$(echo "$done_count + $remaining" | bc)
@@ -74,4 +76,4 @@ screen -ls
 
 normalize_remaining_print.py
 
-ls_multi_folder.py normalized normalized_done normalized_staging normalized_temp normalized_temp_single_staging normalized_temp_single|column -t -s $'\t'
+ls_multi_folder.py "normalized_${today}" "normalized_${today}_done" "normalized_${today}_staging" "normalized_${today}_temp" "normalized_${today}_temp_single_staging" "normalized_${today}_temp_single"|column -t -s $'\t'
