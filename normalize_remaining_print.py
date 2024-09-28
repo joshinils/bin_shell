@@ -137,20 +137,26 @@ def main():
         printables = []
         log_names = list(set([fname.removesuffix(".log") for fname in glob.glob(f"*.working.log") + glob.glob(f"*.working") if os.path.isfile(fname)]))
 
-        max_length_working_now = 0
-        for stream_count, size, fname in streams_size_name:
-            working_now = 0
-            for log_name in log_names:
-                if log_name.startswith(fname):
-                    working_now += 1
-            max_length_working_now = max(max_length_working_now, working_now)
+        max_streams_count = 0
+        for log_name in log_names:
+            max_streams_count = max(max_streams_count, int(log_name.split(".working")[-2][-3:]) +1)
 
         for stream_count, size, fname in streams_size_name:
+            dict_of_integers = {}
+            for i in range(max_streams_count):
+                dict_of_integers[i] = "·"
             working_now = 0
             for log_name in log_names:
                 if log_name.startswith(fname):
+                    # get stream number from log_name
+                    stream_number = int(log_name.split(".working")[-2][-3:])
+                    dict_of_integers[stream_number] = f"@{log_name[:20]} {fname[:20]}#" + str(stream_number)  # [-1]
+                    dict_of_integers[stream_number] = str(stream_number)[-1]
                     working_now += 1
-            working_now_str = ' ' * (max_length_working_now - working_now) + '*' * working_now
+            working_now_str = ""
+            for i in range(max_streams_count):
+                working_now_str += dict_of_integers[i]
+            working_now_str = ' ' * (0*max_streams_count - working_now) + working_now_str
             printables.append(f"{stream_count:2d}, {make_size_str(size)}, {working_now_str} {fname.replace('Link to makeMKV_out/', '')}")
 
         print("Waiting:")
