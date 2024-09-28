@@ -4,7 +4,7 @@ import pathlib
 import subprocess
 import sys
 from typing import List, Set, Tuple
-
+import datetime
 
 def print_folder_content(folder):
     if os.path.isdir(folder):
@@ -53,8 +53,10 @@ def print_folders_contents(folders: List[str]):
 
     foldername: str
     folder_counts = "\t"
+    today = datetime.datetime.now().strftime("%Y-%m-%d_")
     for foldername, count in filecount_each:
         foldername = str(foldername).replace("normalized_", "")
+        foldername = str(foldername).replace(today, "")
         folder_counts += f"{foldername}\t{count}\t"
     print(folder_counts)
 
