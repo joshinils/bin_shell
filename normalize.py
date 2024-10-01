@@ -21,6 +21,28 @@ normalized_output:              Final[pathlib.Path] = pathlib.Path(f"normalized_
 normalized_done:                Final[pathlib.Path] = normalized_output / pathlib.Path(f"normalized_{today}_done")  # noqa: E241 # original file, not to be deleted
 
 
+def touch_r__oldest(first, second):
+    # Get the access and modification times of the first file
+    stat_first_ = os.stat(first)
+    stat_second = os.stat(second)
+
+    access_time = min(stat_first_.st_atime, stat_second.st_atime)
+    modification_time = min(stat_first_.st_mtime, stat_second.st_mtime)
+
+    # Set the access and modification times of the younger file to the same as the older
+    a_m_time = min(access_time, modification_time)
+    if stat_first_.st_atime > stat_second.st_atime:
+        print(f"touching {first} \twith {stat_first_.st_atime=} {stat_first_.st_mtime=}")
+        print(f"    from {second} \twith {stat_second.st_atime=} {stat_second.st_mtime=}")
+        print(f"    {access_time=} {modification_time=}")
+        os.utime(first, (a_m_time, a_m_time))
+    else:
+        print(f"touching {second} \twith {stat_second.st_atime=} {stat_second.st_mtime=}")
+        print(f"    from {first} \twith {stat_first_.st_atime=} {stat_first_.st_mtime=}")
+        print(f"    {access_time=} {modification_time=}")
+        os.utime(second, (a_m_time, a_m_time))
+
+
 def print_lineno() -> str:
     cf = currentframe()
     return f"{getframeinfo(cf).filename}:{cf.f_back.f_lineno}"
@@ -228,6 +250,8 @@ def normalize(path: pathlib.Path) -> pathlib.Path:
     sample_rate = get_sample_rate(path)
 
     bitrate_list = []
+    # https://www.reddit.com/r/ffmpeg/comments/1ejpjvq/what_channel_layouts_can_libopus_produce_convert/
+    # https://www.rfc-editor.org/rfc/rfc7845.html#section-5.1.1.2
     bitrate_lut = {
         1:  64_000,  # noqa: E241  # mono 32 * 2
         2: 128_000,  # stereo 32 *  4
@@ -385,6 +409,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
         error = sub_process_result.returncode != 0 and sub_process_result.returncode != 1
 
         if status_ok or warning:
+            touch_r__oldest(video_path, out_name)
             normalized_done.mkdir(exist_ok=True, parents=True)
             video_path.rename(normalized_done / video_path.name)
 
