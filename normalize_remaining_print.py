@@ -139,7 +139,13 @@ def main():
 
         max_streams_count = 0
         for log_name in log_names:
-            max_streams_count = max(max_streams_count, int(log_name.split(".working")[-2][-3:]) +1)
+            try:
+                # during merging there exists the log file of the form
+                # "better---Title_year - MD ORT.working.log"
+                # which does not have a stream number
+                max_streams_count = max(max_streams_count, int(log_name.split(".working")[-2][-3:]) +1)
+            except:
+                continue
 
         for stream_count, size, fname in streams_size_name:
             dict_of_integers = {}
