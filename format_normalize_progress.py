@@ -10,7 +10,11 @@ import hashlib
 import colorama
 
 def hash_int(input_str: str) -> int:
-    return int(hashlib.md5(input_str.encode(), usedforsecurity=False).hexdigest(), 16)
+    try:
+        return int(hashlib.md5(input_str.encode(), usedforsecurity=False).hexdigest(), 16)
+    except:
+        # python 3.8 does not have a second argument for hashlib.md5
+        return int(hashlib.md5(input_str.encode()).hexdigest(), 16)
 
 def round_nearest(x, a):
     # https://stackoverflow.com/a/28427814
