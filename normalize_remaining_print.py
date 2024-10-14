@@ -93,6 +93,12 @@ def pickle_save_filemeta(metadata: Dict[str, Tuple[int, int]]) -> None:
     with open(pickled_filename, 'wb') as f:
         pickle.dump(metadata, f)
 
+# for python 3.8
+def removesuffix(text: str, suffix: str) -> str:
+    if text.endswith(suffix):
+        return text[:-len(suffix)]
+    return text
+
 
 def main():
     filenames = next(os.walk(os.getcwd()), (None, None, []))[2]  # [] if no file
@@ -135,7 +141,7 @@ def main():
     streams_size_name.sort(key=lambda x: x[0], reverse=False)
     if len(streams_size_name) > 0:
         printables = []
-        log_names = list(set([fname.removesuffix(".log") for fname in glob.glob(f"*.working.log") + glob.glob(f"*.working") if os.path.isfile(fname)]))
+        log_names = list(set([removesuffix(fname, ".log") for fname in glob.glob(f"*.working.log") + glob.glob(f"*.working") if os.path.isfile(fname)]))
 
         max_streams_count = 0
         for log_name in log_names:
