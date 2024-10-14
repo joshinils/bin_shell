@@ -161,7 +161,10 @@ def main():
             for log_name in log_names:
                 if log_name.startswith(fname):
                     # get stream number from log_name
-                    stream_number = int(log_name.split(".working")[-2][-3:])
+                    try:
+                        stream_number = int(log_name.split(".working")[-2][-3:])
+                    except:
+                        stream_number = 999
                     dict_of_integers[stream_number] = f"@{log_name[:20]} {fname[:20]}#" + str(stream_number)  # [-1]
                     dict_of_integers[stream_number] = str(stream_number)[-1]
                     working_now += 1
