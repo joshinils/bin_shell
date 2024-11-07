@@ -94,12 +94,12 @@ def set_track_title(temp_name: str, out_name: str, title: str) -> str:
     return out_name
 
 
-def download_format_wrap(args: Tuple[Tuple[str, str], str, str]) -> str:
-    format_tuple, url, title = args
-    return download_format(format_tuple, url, title)
+def download_format_wrap(args: Tuple[Tuple[str, str], str, str, float]) -> str:
+    format_tuple, url, title, ratelimit = args
+    return download_format(format_tuple, url, title, ratelimit)
 
 
-def download_format(format_tuple: Tuple[str, str], url: str, title: str) -> str:
+def download_format(format_tuple: Tuple[str, str], url: str, title: str, ratelimit: float) -> str:
     format, track_title = format_tuple
     out_name = f"{title}.{format}.mkv"
     ydl_opts = {
@@ -107,6 +107,7 @@ def download_format(format_tuple: Tuple[str, str], url: str, title: str) -> str:
         'format': format,
         'outtmpl': out_name,
         'concurrent_fragment_downloads': 42,
+        'ratelimit': ratelimit,  # bytes per second
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -185,7 +186,7 @@ def get_download_ids(url: str) -> Tuple[List[Tuple[str, str]], str]:
     return downloadables, title
 
 
-def main(url: str) -> None:
+def main(url: str, ratelimit: float) -> None:
     formats, title = get_download_ids(url)
     title = title.replace("/", "⧸")
 
@@ -193,7 +194,7 @@ def main(url: str) -> None:
 
     tasks = []
     for format in formats:
-        tasks.append((format, url, title))
+        tasks.append((format, url, title, ratelimit))
         print(format)
 
     downloaded_names = []
@@ -218,7 +219,17 @@ if __name__ == "__main__":
         metavar="url",
     )
 
+    parser.add_argument(
+        "ratelimit",
+        type=float,
+        help='Maximum download rate in bytes per second, e.g. 6663000',
+        metavar="r",
+        default="6663000",
+        nargs="?",
+    )
+
     args = parser.parse_args()
 
     url: int = args.url
-    main(url)
+    ratelimit: float = args.ratelimit
+    main(url, ratelimit)
