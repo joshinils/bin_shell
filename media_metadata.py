@@ -142,6 +142,7 @@ def main(path: pathlib.Path) -> None:
     path_str = path_str.replace("DTS-HD Master Audio", "DTS-HD MA")
     path_str = path_str.replace("DTS-HD High Resolution Audio", "DTS-HD HR")
     path_str = path_str.replace("AC-3 DD", "AC-3")
+    path_str = path_str.replace("/", "∕")  # sanity, don't create subdirs willy nilly!
 
     print(f"{path_str=}")
     p = pathlib.Path(path_str)
