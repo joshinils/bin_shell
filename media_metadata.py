@@ -133,8 +133,6 @@ def main(path: pathlib.Path) -> None:
     elif en is True and de is True:
         de_en_both = " de_en_both"
 
-    path_str = f"{total_multi_streams}— {de_en_both}/{path_str}"
-
     path_str = path_str.replace("Dolby Digital Plus", "DDP")
     path_str = path_str.replace("Dolby Digital", "DD")
     path_str = path_str.replace("MLP FBA Dolby TrueHD", "TrueHD")
@@ -143,6 +141,8 @@ def main(path: pathlib.Path) -> None:
     path_str = path_str.replace("DTS-HD High Resolution Audio", "DTS-HD HR")
     path_str = path_str.replace("AC-3 DD", "AC-3")
     path_str = path_str.replace("/", "∕")  # sanity, don't create subdirs willy nilly!
+
+    path_str = f"{total_multi_streams}— {de_en_both}/{path_str}"
 
     print(f"{path_str=}")
     p = pathlib.Path(path_str)
