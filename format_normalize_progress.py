@@ -154,7 +154,7 @@ def count_beginning_spaces(string: str) -> int:
     return count
 
 
-reg_str = r"""(Stream |Second Pass|File|Running Command|Running ffmpeg)(?:(\d+)\/(\d+))*: +\d+%\|[ ▏▎▍▌▋▊▉█]{10}\| +(\d+\.*\d*)\/(10*) \[([\d:,\?]+)<([\d:,\?]+), +([\d\.,?]+)(it\/s|s\/it)\](?:.*)\./(.*)\.log"""
+reg_str = r"""(Stream |Second Pass|File|Running Command|Running ffmpeg)(?:(\d+)\/(\d+))*: +\d+\.\d*% *\|[ ▏▎▍▌▋▊▉█]{10}\| +(\d+\.*\d*)\/(10*) \[([\d:,\?]+)<([\d:,\?]+), +([\d\.,?]+)(it\/s|s\/it)\](?:.*)\./(.*)\.log"""
 regex = re.compile(reg_str)
 
 
