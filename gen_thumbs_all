@@ -8,4 +8,4 @@ export gen_thumbs  # ensure gen_thumbs is available to parallel
 
 find -- * -maxdepth 0 -type f \( -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.webm" \) -print0 | \
     xargs -0 ls -S | \
-    parallel --bar --tag --line-buffer -j "${cores}" ionice -c 3 gen_thumbs "{}" "${1}" "${2}" "${3}"
+    parallel --bar --tag --line-buffer -j "${cores}" ionice -c 3 ~/settings/bin_shell/gen_thumbs "{}" "${1}" "${2}" "${3}"
