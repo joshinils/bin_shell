@@ -5,8 +5,9 @@ import os
 import pathlib
 import pickle
 from typing import Dict, Tuple
-
+import datetime
 from normalize import get_amount_of_audio_streams
+from typing import Final
 
 extension_keep: Tuple[str] = (
     "ogg",
@@ -71,6 +72,23 @@ def pickle_load_filemeta() -> Dict[str, Tuple[int, int]]:
         return dict()
 
 
+today = datetime.datetime.today().isoformat()[0:10]
+normalized_output:              Final[pathlib.Path] = pathlib.Path(f"normalized_{today}")                           # noqa: E241 # finished combined file
+
+
+def write_total_streams_done():
+    total_streams_done = 0
+    total_streams_done_path = pathlib.Path(".total_streams_done.txt")
+
+    done_names = glob.glob(f"{normalized_output}/*.m4a") + glob.glob(f"{normalized_output}/*.opus") + glob.glob(f"{normalized_output}/*.webm") + glob.glob(f"{normalized_output}/*.ogg") + glob.glob(f"{normalized_output}/*.mkv") + glob.glob(f"{normalized_output}/*.mp4")
+
+    for filename in done_names:
+        total_streams_done += get_amount_of_audio_streams(filename)
+
+    with open(total_streams_done_path, "w") as total_streams_done_file:
+        total_streams_done_file.write(f"{total_streams_done}")
+
+
 def pickle_save_filemeta(metadata: Dict[str, Tuple[int, int]]) -> None:
     total_streams_path = pathlib.Path(".total_streams_remaining.txt")
     if not metadata:
@@ -86,7 +104,6 @@ def pickle_save_filemeta(metadata: Dict[str, Tuple[int, int]]) -> None:
     total_streams_remaining = 0
     for _, meta_tuple in metadata.items():
         total_streams_remaining += meta_tuple[0]
-
     with open(total_streams_path, "w") as total_streams_file:
         total_streams_file.write(f"{total_streams_remaining}")
 
@@ -136,6 +153,7 @@ def main():
         streams_size_name.append((stream_count, filesize, name))
 
     pickle_save_filemeta(filemeta_data)
+    write_total_streams_done()
 
     streams_size_name.sort(key=lambda x: x[1], reverse=False)
     streams_size_name.sort(key=lambda x: x[0], reverse=False)
