@@ -16,9 +16,8 @@ done_opus=$(find "normalized_${today}"/*.opus 2>/dev/null|wc -l)
 done_m4a=$(find "normalized_${today}"/*.m4a 2>/dev/null|wc -l)
 done_files_count=$((done_mp4 + done_mkv + done_ogg + done_webm + done_opus + done_m4a))
 
-done_count=$(cat ".total_streams_done.txt")
-remaining=$(cat ".total_streams_remaining.txt")
-
+done_count=$( [ -f ".total_streams_done.txt" ] && cat ".total_streams_done.txt" || echo 0 )
+remaining=$( [ -f ".total_streams_remaining.txt" ] && cat ".total_streams_remaining.txt" || echo 0 )
 total=$(echo "$done_count + $remaining" | bc)
 
 run_norm=""
@@ -31,7 +30,7 @@ if [ "$running" -gt 0 ] ; then
 fi
 
 if [ "$executing" -gt 0 ] ; then
-    run_norm="${run_norm} | ${executing}E"
+    run_norm="${run_norm} | ${executing}X"
 fi
 
 if [ "$running" -gt 0 ] || [ "$executing" -gt 0 ] ; then
