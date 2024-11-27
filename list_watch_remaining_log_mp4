@@ -39,8 +39,11 @@ fi
 
 if [ -f ".total_streams_remaining.txt" ]; then
     streams_waiting="$(echo "$(cat ".total_streams_remaining.txt")" -"$running" | bc)"
-    echo "${streams_waiting}S Wait = $(echo "scale=2; 100 * $streams_waiting / $total" | bc ) %"|figlet -ct -f blk
+    if [ "$streams_waiting" -gt 0 ] ; then
+        echo "${streams_waiting}S Wait = $(echo "scale=2; 100 * $streams_waiting / $total" | bc ) %"|figlet -ct -f blk
+    fi
 fi
+
 if [ "$total" -gt 0 ] ; then
     if [ "$done_count" -gt 0 ] ; then
         echo "${done_count}S Done = $(echo "scale=2; 100 * $done_count / $total" | bc ) % | ${done_files_count}F"|figlet -ct -f blk
