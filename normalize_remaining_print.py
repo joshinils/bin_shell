@@ -174,7 +174,7 @@ def main():
         for stream_count, size, fname in streams_size_name:
             dict_of_integers = {}
             for i in range(max_streams_count):
-                dict_of_integers[i] = "·"
+                dict_of_integers[i] = "•" if i < stream_count else "·"
             working_now = 0
             for log_name in log_names:
                 if log_name.startswith(fname):
