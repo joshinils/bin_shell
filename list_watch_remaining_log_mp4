@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 disc_free.py
-echo "waiting: $(find . "Link to makeMKV_out"/ -maxdepth 1 -type f \( -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.ogg" -o -iname "*.webm" -o -iname "*.opus" -o -iname "*.m4a" \) -exec du -cB GiB {} + 2> /dev/null| tail -n 1)"
+echo "waiting: $(find . "Link to makeMKV_out"/ -maxdepth 1 -type f \( -iname "*.mkv" -o -iname "*.m2ts" -o -iname "*.mp4" -o -iname "*.ogg" -o -iname "*.webm" -o -iname "*.opus" -o -iname "*.m4a" \) -exec du -cB GiB {} + 2> /dev/null| tail -n 1)"
 
 running=$(find -- *.working 2>/dev/null|wc -l)
 executing=$(find -- *.log 2>/dev/null|wc -l)
@@ -10,11 +10,12 @@ today=$(date +"%Y-%m-%d")
 
 done_mp4=$(find "normalized_${today}"/*.mp4 2>/dev/null|wc -l)
 done_mkv=$(find "normalized_${today}"/*.mkv 2>/dev/null|wc -l)
+done_m2ts=$(find "normalized_${today}"/*.m2ts 2>/dev/null|wc -l)
 done_ogg=$(find "normalized_${today}"/*.ogg 2>/dev/null|wc -l)
 done_webm=$(find "normalized_${today}"/*.webm 2>/dev/null|wc -l)
 done_opus=$(find "normalized_${today}"/*.opus 2>/dev/null|wc -l)
 done_m4a=$(find "normalized_${today}"/*.m4a 2>/dev/null|wc -l)
-done_files_count=$((done_mp4 + done_mkv + done_ogg + done_webm + done_opus + done_m4a))
+done_files_count=$((done_mp4 + done_mkv + done_ogg + done_webm + done_opus + done_m4a + done_m2ts))
 
 done_count=$( [ -f ".total_streams_done.txt" ] && cat ".total_streams_done.txt" || echo 0 )
 remaining=$( [ -f ".total_streams_remaining.txt" ] && cat ".total_streams_remaining.txt" || echo 0 )

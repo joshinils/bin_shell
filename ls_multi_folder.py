@@ -6,13 +6,16 @@ import sys
 from typing import List, Set, Tuple
 import datetime
 
+
+extensions = ['.mp4', '.mkv', '.mov', '.m2ts']
+
 def print_folder_content(folder):
     if os.path.isdir(folder):
         files = []
         for root, dirs, filenames in os.walk(folder):
             for filename in filenames:
                 ext: str = os.path.splitext(filename)[1]
-                if ext.lower() in ['.mp4', '.mkv', '.mov']:
+                if ext.lower() in extensions:
                     files.append(os.path.join(root, filename))
 
         if len(files) > 0:
@@ -35,7 +38,7 @@ def print_folders_contents(folders: List[str]):
             for root, dirs, filenames in os.walk(folder):
                 for filename in filenames:
                     ext: str = os.path.splitext(filename)[1]
-                    if ext.lower() in ['.mp4', '.mkv', '.mov']:
+                    if ext.lower() in extensions:
                         filecount += 1
                         filenames_superset.add(filename.replace(".normalized.mkv", ""))
                 break  # do not descent into next subfolders

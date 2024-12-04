@@ -16,6 +16,7 @@ extension_keep: Tuple[str] = (
     "webm",
     "mp4",
     "mkv",
+    "m2ts",
 )
 
 
@@ -80,7 +81,7 @@ def write_total_streams_done():
     total_streams_done = 0
     total_streams_done_path = pathlib.Path(".total_streams_done.txt")
 
-    done_names = glob.glob(f"{normalized_output}/*.m4a") + glob.glob(f"{normalized_output}/*.opus") + glob.glob(f"{normalized_output}/*.webm") + glob.glob(f"{normalized_output}/*.ogg") + glob.glob(f"{normalized_output}/*.mkv") + glob.glob(f"{normalized_output}/*.mp4")
+    done_names = glob.glob(f"{normalized_output}/*.m4a") + glob.glob(f"{normalized_output}/*.opus") + glob.glob(f"{normalized_output}/*.webm") + glob.glob(f"{normalized_output}/*.ogg") + glob.glob(f"{normalized_output}/*.mkv") + glob.glob(f"{normalized_output}/*.m2ts") + glob.glob(f"{normalized_output}/*.mp4")
 
     for filename in done_names:
         total_streams_done += get_amount_of_audio_streams(filename)
