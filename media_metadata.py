@@ -36,6 +36,7 @@ def main(path: pathlib.Path) -> None:
 
     metadata_json = get_mkvmerge_json(path).get("tracks", {})
     elem: dict
+    keepsies = dict()
     for elem in metadata_json:
         if elem.get("type") != "audio":
             continue
@@ -43,11 +44,11 @@ def main(path: pathlib.Path) -> None:
 
         flag_visual_impaired = elem.get("properties", {}).get("flag_visual_impaired")
         flag_commentary = elem.get("properties", {}).get("flag_commentary")
-        language = elem.get("properties", {"language_ietf": "und"}).get("language_ietf", "und")
+        lang_code = elem.get("properties", {"language_ietf": "und"}).get("language_ietf", "und")
         channel_count = elem.get("properties", {"audio_channels": 0}).get("audio_channels", 0)
 
-        if language == "und":
-            language = elem.get("properties", {"language": "und"}).get("language", "und")
+        if lang_code == "und":
+            lang_code = elem.get("properties", {"language": "und"}).get("language", "und")
             lang_dict = {  # ISO-639-2 -> ISO-639-1
                 "ger": "de",
                 "eng": "en",
@@ -79,47 +80,59 @@ def main(path: pathlib.Path) -> None:
                 "ind": "id",
                 "und": "und",
             }
-            if language in lang_dict:
-                language = lang_dict.get(language, language)
+            if lang_code in lang_dict:
+                lang_code = lang_dict.get(lang_code, lang_code)
             else:
-                eprint(f"{language=} found, not sure what to do with it.")
+                eprint(f"{lang_code=} found, not sure what to do with it.")
 
         if flag_commentary:
-            language += "-co"
+            lang_code += "-co"
         if flag_visual_impaired:
-            language += "-vi"
-        language += f"*{channel_count}"
+            lang_code += "-vi"
+        lang_code += f"*{channel_count}"
 
-        format = elem.get("codec")
         # print(f"{flag_commentary=} {flag_visual_impaired=} {language=} {format=}")
 
-        print(f"{format=}")
-        langs_dict[language].append(f"{format}")
+        stream_format = elem.get("codec")
+        keepsies[elem["id"] - 1] = lang_code, stream_format
+
+        print(f"{stream_format=}")
+        langs_dict[lang_code].append(f"{stream_format}")
         print()
 
+    # print(f"{keepsies=}")
+
+    items_multi_to_generate_spectograms = set()
     items_multi = []
     items_single = []
     total_multi_streams = 0
     total_single_streams = 0
     de = False
     en = False
-    for lang_code, stream_type in langs_dict.items():
-        print(lang_code, len(stream_type))
+    for lang_code, stream_formats_list in langs_dict.items():
+        print(lang_code, len(stream_formats_list))
         de = lang_code.split("*")[0] == "de" or de
         en = lang_code.split("*")[0] == "en" or en
-        if len(stream_type) > 1 or lang_code == "und":  # or "d=" in v[0]:
-            items_multi.append(f"{len(stream_type)}×{lang_code}[{', '.join(stream_type)}]")
+        if len(stream_formats_list) > 1 or lang_code == "und":  # or "d=" in v[0]:
+            items_multi.append(f"{len(stream_formats_list)}×{lang_code}[{', '.join(stream_formats_list)}]")
+            for index, lang_code__stream_format in keepsies.items():
+                for stream_format__ in stream_formats_list:
+                    print(f"{lang_code=} {stream_format__=}  {lang_code__stream_format=}")
+                    if lang_code__stream_format == (lang_code, stream_format__):
+                        items_multi_to_generate_spectograms.add((index, lang_code, stream_format__))
             if "-co" in lang_code:
                 continue
-            total_multi_streams += len(stream_type)
-        elif len(stream_type) <= 1 or lang_code == "und":
-            items_single.append(f"{len(stream_type)}×{lang_code}[{', '.join(stream_type)}]")
-            total_single_streams += len(stream_type)
+            total_multi_streams += len(stream_formats_list)
+        elif len(stream_formats_list) <= 1 or lang_code == "und":
+            items_single.append(f"{len(stream_formats_list)}×{lang_code}[{', '.join(stream_formats_list)}]")
+            total_single_streams += len(stream_formats_list)
+
+    print(f"{items_multi_to_generate_spectograms=}")
 
     path_str = ""
 
-    print(items_multi)
-    print(items_single)
+    print(f"{items_multi=}")
+    print(f"{items_single=}")
 
     path_str += ", ".join(sorted(items_multi) + sorted(items_single))
 
@@ -157,6 +170,31 @@ def main(path: pathlib.Path) -> None:
     except:
         # filename too long, ignore
         pass
+
+    # generate spectograms in the new folder
+    # bash example: ffmpeg -hide_banner -loglevel warning -t 30 -i "$1" -filter_complex "[0:a:${2}]showspectrumpic=2276x1312:mode=combined:scale=log:color=channel:win_func=gauss:saturation=-2:gain=2" -n "${1// /_}_s${2// /_}_${language}_spectrum.png"
+    for stream_index, lang_code, stream_format in items_multi_to_generate_spectograms:
+        print(f"{stream_index=} {lang_code=} {stream_format=}")
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "warning",
+            "-t",
+            "300",
+            "-i",
+            str(p / path),
+            "-filter_complex",
+            f"[0:a:{stream_index}]showspectrumpic=2276x1312:mode=combined:scale=log:color=channel:win_func=gauss:saturation=-2:gain=2",
+            "-n",
+            str(p / f"{path.stem}_s{stream_index}_{lang_code}_{stream_format}_spectrum.png"),
+        ]
+        try:
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True, text=True)
+            print(f"spectrogram subprocess {result=}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error executing ffmpeg: {e}")
+            raise Exception
 
 
 if __name__ == "__main__":
