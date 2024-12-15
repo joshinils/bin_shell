@@ -187,7 +187,7 @@ def main(path: pathlib.Path) -> None:
             "-filter_complex",
             f"[0:a:{stream_index}]showspectrumpic=2276x1312:mode=combined:scale=log:color=channel:win_func=gauss:saturation=-2:gain=2",
             "-n",
-            str(p / f"{path.stem}_s{stream_index}_{lang_code}_{stream_format}_spectrum.png"),
+            str(p / f"{path.stem}_s{stream_index}_{lang_code}_{stream_format}_spectrum.png".replace("/", "∕")),
         ]
         try:
             result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True, text=True)
