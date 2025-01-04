@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
+import datetime
 import glob
 import os
 import pathlib
 import pickle
-from typing import Dict, Tuple
-import datetime
+from typing import Dict, Final, Tuple
+
 from normalize import get_amount_of_audio_streams
-from typing import Final
 
 extension_keep: Tuple[str] = (
     "ogg",

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
+import datetime
 import os
 import pathlib
 import subprocess
 import sys
 from typing import List, Set, Tuple
-import datetime
-
 
 extensions = ['.mp4', '.mkv', '.mov', '.m2ts']
 

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 
 import datetime
+import hashlib
 import math
 import os
 import re
 import sys
 from typing import Tuple
-import hashlib
+
 import colorama
+
 
 def hash_int(input_str: str) -> int:
     try:
