@@ -48,31 +48,6 @@ def print_lineno() -> str:
     return f"{getframeinfo(cf).filename}:{cf.f_back.f_lineno}"
 
 
-mkvmerge_command_text: Optional[List[str]] = None
-for command_list in [
-    ["mkvmerge"],
-    ["flatpak", "run", "-vv", "org.bunkus.mkvtoolnix-gui", "mkvmerge"],
-]:
-    try:
-        result = subprocess.run(
-            command_list + ["--version"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        mkvmerge_version = result.stdout.decode('utf-8', errors="ignore").strip()
-        mkvmerge_command_text = command_list
-    except:  # noqa: E722
-        pass
-    if mkvmerge_command_text is not None:
-        break
-
-if mkvmerge_command_text is not None:
-    print(f"using \"{mkvmerge_version}\" via \"{' '.join(mkvmerge_command_text)}\"")
-else:
-    print("no viable mkvmerge found, exiting")
-    exit()
-
-
 class NameInfo(TypedDict):
     done: List[pathlib.Path]
     count: int
@@ -141,9 +116,10 @@ def extract_audio_stream(path: pathlib.Path, stream_number: int) -> pathlib.Path
                 stderr=logfile_stderr,
             )
 
-        if(sub_process_result.returncode == 0
+        if (
+            sub_process_result.returncode == 0
             or sub_process_result.returncode == 1 and no_overwrite_intermediary
-           ):
+        ):
             normalized_temp_single.mkdir(exist_ok=True)
             out_name_staging.rename(out_name)
             return out_name
@@ -644,4 +620,29 @@ def main():
 
 
 if __name__ == "__main__":
+    global mkvmerge_command_text
+    mkvmerge_command_text: Optional[List[str]] = None
+    for command_list in [
+        ["mkvmerge"],
+        ["flatpak", "run", "-vv", "org.bunkus.mkvtoolnix-gui", "mkvmerge"],
+    ]:
+        try:
+            result = subprocess.run(
+                command_list + ["--version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            mkvmerge_version = result.stdout.decode('utf-8', errors="ignore").strip()
+            mkvmerge_command_text = command_list
+        except:  # noqa: E722
+            pass
+        if mkvmerge_command_text is not None:
+            break
+
+    if mkvmerge_command_text is not None:
+        print(f"using \"{mkvmerge_version}\" via \"{' '.join(mkvmerge_command_text)}\"")
+    else:
+        print("no viable mkvmerge found, exiting")
+        exit()
+
     main()
