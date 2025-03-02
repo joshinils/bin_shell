@@ -83,7 +83,7 @@ def gen_spectogram(
         "-i",
         str(media_path),
         "-filter_complex",
-        f"[0:a:{stream_index}]showspectrumpic=2276x1312:mode=combined:scale=log:color=channel:win_func=gauss:saturation=-2:gain=2:legend=off",
+        f"[0:a:{stream_index}]showspectrumpic=2560x1440:mode=combined:scale=log:color=channel:win_func=gauss:saturation=-2:gain=2:legend=off",
         "-n",
         str(out_path),
     ]
@@ -103,8 +103,8 @@ def gen_spectogram(
 
 def gen_diff_image_from_media_single(fileA_path: pathlib.Path, fileB_path: pathlib.Path, stream_index: int, start_time: float = 0, duration: float = 300) -> None:
     if fileA_path.stem == fileB_path.stem:
-        differentiatorA = "_A"
-        differentiatorB = "_B"
+        differentiatorA = "A"
+        differentiatorB = "B"
     else:
         differentiatorA = ""
         differentiatorB = ""
