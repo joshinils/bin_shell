@@ -121,7 +121,7 @@ def gen_diff_image_from_media_single(fileA_path: pathlib.Path, fileB_path: pathl
         fileA_path.stem.replace(common_stem, ''),
         fileB_path.stem.replace(common_stem, '')
     ])
-    postfixes.remove('original')
+    postfixes.discard('original')
     common_stem = common_stem.removesuffix('_')
 
     image_diff.save(f"{common_stem}_{'_'.join(postfixes)}_s{stream_index:>03}_diff.png")
