@@ -56,7 +56,8 @@ def gen_spectogram(
     media_path: pathlib.Path,
     stream_index: int,
     start_time: float,
-    duration: float = 300
+    duration: float = 300,
+    differentiator: str = "",
 ) -> pathlib.Path:
     # bash example: ffmpeg -hide_banner -loglevel warning -t 30 -i "$1" -filter_complex "[0:a:${2}]showspectrumpic=2276x1312:mode=combined:scale=log:color=channel:win_func=gauss:saturation=-2:gain=2" -n "${1// /_}_s${2// /_}_${language}_spectrum.png"
 
@@ -68,7 +69,7 @@ def gen_spectogram(
         print(f'{media_path} is a directory')
         return None
 
-    out_path = pathlib.Path(f"{media_path.stem}_s{stream_index}_spectrum.png")
+    out_path = pathlib.Path(f"{media_path.stem}_{differentiator}_s{stream_index}_spectrum.png")
 
     cmd = [
         "ffmpeg",
@@ -101,12 +102,19 @@ def gen_spectogram(
 
 
 def gen_diff_image_from_media_single(fileA_path: pathlib.Path, fileB_path: pathlib.Path, stream_index: int, start_time: float = 0, duration: float = 300) -> None:
-    spec_a = gen_spectogram(fileA_path, stream_index, start_time, duration)
+    if fileA_path.stem == fileB_path.stem:
+        differentiatorA = "_A"
+        differentiatorB = "_B"
+    else:
+        differentiatorA = ""
+        differentiatorB = ""
+
+    spec_a = gen_spectogram(fileA_path, stream_index, start_time, duration, differentiatorA)
     if spec_a is None:
         print(f"Failed to generate spectogram for {fileA_path}")
         return
 
-    spec_b = gen_spectogram(fileB_path, stream_index, start_time, duration)
+    spec_b = gen_spectogram(fileB_path, stream_index, start_time, duration, differentiatorB)
     if spec_b is None:
         print(f"Failed to generate spectogram for {fileB_path}")
         return
