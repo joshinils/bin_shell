@@ -18,7 +18,7 @@ from python_funs.video import get_duration
 def gen_diff_buffer(
     image1_path: pathlib.Path,
     image2_path: pathlib.Path
-) -> Optional[Image.Image]:
+) -> np.ndarray[np.int32]:
     if not image1_path.exists():
         print(f'{image1_path} does not exist')
         return None
@@ -58,8 +58,8 @@ def gen_diff_image(
     if buffer_diff is None:
         return None
 
-    median = statistics.median(buffer_diff)
-    mean = statistics.mean(buffer_diff)
+    median = statistics.median(buffer_diff.flat)
+    mean = statistics.mean(buffer_diff.flat)
     min_val = np.min(buffer_diff)
     max_val = np.max(buffer_diff)
 
