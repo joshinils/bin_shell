@@ -21,7 +21,7 @@ normalized_output:              Final[pathlib.Path] = pathlib.Path(f"normalized_
 normalized_done:                Final[pathlib.Path] = normalized_output / pathlib.Path(f"normalized_{today}_done")  # noqa: E241 # original file, not to be deleted
 
 
-def touch_r__oldest(first, second):
+def touch_r__oldest(first: str | pathlib.Path, second: str | pathlib.Path) -> None:
     # Get the access and modification times of the first file
     stat_first_ = os.stat(first)
     stat_second = os.stat(second)
@@ -45,7 +45,13 @@ def touch_r__oldest(first, second):
 
 def print_lineno() -> str:
     cf = currentframe()
-    return f"{getframeinfo(cf).filename}:{cf.f_back.f_lineno}"
+    if cf is None:
+        return ""
+    if cf.f_back is not None:
+        lineno = cf.f_back.f_lineno
+    else:
+        lineno = "N/A"
+    return f"{getframeinfo(cf).filename}:{lineno}"
 
 
 class NameInfo(TypedDict):
@@ -53,7 +59,7 @@ class NameInfo(TypedDict):
     count: int
 
 
-def rmdir(path: pathlib.Path) -> None:
+def rmdir(path: pathlib.Path) -> Optional[int]:
     # remove directory, iff empty
     commands = ['rmdir', '--ignore-fail-on-non-empty', '-p', f"{path}"]
     try:
@@ -140,7 +146,7 @@ def get_codec(path: pathlib.Path) -> str:
     if override_codec is not None:
         return override_codec
 
-    commands = ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_name", "-of", "default=noprint_wrappers=1:nokey=1", f"{path}"]
+    commands = ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_name", "-of", "default=noprint_wrappers=1:nokey=1", f"{path}"]  # noqa
 
     try:
         sub_process_result = subprocess.run(
@@ -376,7 +382,7 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
 
         normalized_staging.mkdir(exist_ok=True)
         sub_process_result = subprocess.run(
-            commands,
+            commands,  # type: ignore
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
@@ -418,10 +424,10 @@ def merge_normalized_with_video_subs(video_path: pathlib.Path, normalized_audio:
                     logfile.write(f"{print_lineno()}, \nerror:    {sub_process_std_err=}")
                 raise RuntimeError(f"mkvmerge returncode is not 0, but {sub_process_result.returncode}")
     except Exception as e:
-        print(traceback.print_exc())
+        traceback.print_exc()
         print(type(e), e)
         with open(logfile_name, "a") as logfile:
-            traceback.print_exc(logfile)
+            traceback.print_exc(file=logfile)
             logfile.write(f"{type(e)}, {e}")
         raise RuntimeError("mkvmerge had some error happen, and did not finish executing")
 
@@ -444,7 +450,10 @@ def extract_normalize_merge_all(paths: List[pathlib.Path], reverse_order: bool =
     for path in paths:
         if skip_dot_working and make_lockfile_name(path).is_file():
             continue
-        path_streams.append((path, get_amount_of_audio_streams(path), path.stat().st_size))
+        amount_of_audio_streams = get_amount_of_audio_streams(path)
+        if amount_of_audio_streams is None:
+            raise ValueError(f"could not get amount of audio streams for {path}")
+        path_streams.append((path, amount_of_audio_streams, path.stat().st_size))
 
     path_streams.sort(key=lambda x: x[2], reverse=False)
     path_streams.sort(key=lambda x: x[1], reverse=False)
@@ -484,7 +493,8 @@ def extract_normalize_merge_all(paths: List[pathlib.Path], reverse_order: bool =
 
 
 global override_codec
-override_codec: str
+override_codec: Optional[str]
+override_codec = None
 
 global ignore_bitrate
 ignore_bitrate: bool
@@ -502,7 +512,7 @@ global extract_only
 extract_only: bool
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description='normalizes a movie file, each audio track by itself, encodes to libopus with bitrates for channel layouts - 2ch = 128 kb/s, 5.1 = 320 kb/s, 7.1 = 448 kb/s')
 
     parser.add_argument(
@@ -621,7 +631,7 @@ def main():
 
 if __name__ == "__main__":
     global mkvmerge_command_text
-    mkvmerge_command_text: Optional[List[str]] = None
+    mkvmerge_command_text: List[str] = []
     for command_list in [
         ["mkvmerge"],
         ["flatpak", "run", "-vv", "org.bunkus.mkvtoolnix-gui", "mkvmerge"],
@@ -636,10 +646,10 @@ if __name__ == "__main__":
             mkvmerge_command_text = command_list
         except:  # noqa: E722
             pass
-        if mkvmerge_command_text is not None:
+        if mkvmerge_command_text != []:
             break
 
-    if mkvmerge_command_text is not None:
+    if mkvmerge_command_text != []:
         print(f"using \"{mkvmerge_version}\" via \"{' '.join(mkvmerge_command_text)}\"")
     else:
         print("no viable mkvmerge found, exiting")
