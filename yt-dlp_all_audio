@@ -107,7 +107,7 @@ def download_format(format_tuple: Tuple[str, str], url: str, title: str, ratelim
         'format': format,
         'outtmpl': out_name,
         'concurrent_fragment_downloads': 42,
-        'ratelimit': ratelimit,  # bytes per second
+        'ratelimit': ratelimit / 42,  # bytes per second
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
