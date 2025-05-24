@@ -7,11 +7,11 @@ codec=$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of
 sample_rate=$(ffprobe -v error -select_streams a -of default=noprint_wrappers=1:nokey=1 -show_entries stream=sample_rate "./${1}"|head -n1)
 mkdir normalized -p
 
-if [ $extension = "ogg" ] || [ $extension = "m4a" ] || [ $extension = "opus" ] || [ $extension = "webm" ]; then
+if [ "$extension" = "ogg" ] || [ "$extension" = "m4a" ] || [ "$extension" = "opus" ] || [ "$extension" = "webm" ] || [ "$extension" = "mka" ] || [ "$extension" = "aac" ]; then
     ffmpeg-normalize -pr -f -ar "${sample_rate}" --extension ogg -t -2 -nt peak --keep-loudness-range-target -c:a libvorbis "./${1}" -vn >> "${1}".log 2>&1
     mkdir normalized_done -p && mv -n "${1}" normalized_done && rm -f "${1}.log"
     mv -n "${1%.*}"*.png normalized > /dev/null 2>&1
-    echo "done running: ffmpeg-normalize -pr -f -ar  \"${sample_rate} \" --extension ogg -t -2 -nt peak --keep-loudness-range-target -c:a libvorbis  \"${1} \" -vn >>  \"${1} \".log 2>&1"
+    echo "done running: ffmpeg-normalize -pr -f -ar  \"${sample_rate} \" --extension ogg -t -2 -nt peak --keep-loudness-range-target -c:a libvorbis  \"${1}\" -vn >>  \"${1}\".log 2>&1"
     rm "${1}".log
 else
     nice -n 20 normalize.py "${@}" && mkdir normalized_done -p  # && mv -n "${1}" normalized_done
