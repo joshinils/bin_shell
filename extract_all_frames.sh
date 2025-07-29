@@ -26,36 +26,54 @@ error() {
 trap 'error "${LINENO}"' ERR
 
 
-video_file="$1"
-interval="${2:-1}"
 
-if [ -z "$video_file" ] || [ "$video_file" == "-h" ] || [ "$video_file" == "--help" ]; then
+if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     echo "Usage: $0 <video_file> [interval]"
     echo "    interval: every nth frame (default=1), or time unit (e.g. 1s, 100ms, 2m, 1h)"
     exit 1
 fi
 
+
+video_file="$1"
+interval="${2:-1}"
+
+# Validate interval: must be strictly greater than 0
+if [[ "$interval" =~ ^-?[0-9]+(\.[0-9]+)?(s|ms|us|ns|m|h)?$ ]]; then
+    # Extract numeric part
+    num=$(echo "$interval" | grep -oE '^-?[0-9]+(\.[0-9]+)?')
+
+    if (( $(echo "$num <= 0" | bc -l) )); then
+        echo "ERROR: Interval must be greater than zero."
+        exit 2
+    fi
+else
+    echo "ERROR: Invalid interval format: $interval"
+    exit 3
+fi
+
 base_name="$(basename -- "$video_file")"
 name_no_ext="${base_name%.*}"
-out_dir="${name_no_ext}.${interval}.d"
+out_dir="${name_no_ext}.${interval}.d/extracted_thumbs"
 mkdir -p "$out_dir"
 
 # Get total frame count
-frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 "$video_file")
+frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 -- "$video_file")
 frames=${frames//,/}
 if ! [[ "$frames" =~ ^[0-9]+$ ]]; then
-    frames=$(ffprobe -v error -select_streams v:0 -show_entries stream=nb_frames -of default=nokey=1:noprint_wrappers=1 "$video_file")
+    frames=$(ffprobe -v error -select_streams v:0 -show_entries stream=nb_frames -of default=nokey=1:noprint_wrappers=1 -- "$video_file")
 fi
-frames=${frames:-10000}
 
-echo "DEBUG: frames=$frames"
-
-# Determine zero padding
-padding_length=${#frames}
+if [[ "$frames" =~ ^[0-9]+$ ]]; then
+    padding_length=${#frames}
+else
+    echo "WARNING: Could not determine frame count, using default padding length of 5."
+    frames="unknown"
+    padding_length=5
+fi
 
 quality=""
 # Choose extension: png for <1000 frames, jpg for more
-if [ "$frames" -le 1000 ]; then
+if [[ "$frames" =~ ^[0-9]+$ ]] && [ "$frames" -le 1000 ]; then
     out_ext="png"
 else
     out_ext="jpg"
@@ -70,11 +88,10 @@ out_pattern="$out_dir/${name_no_ext}_frame_%0${padding_length}d.$out_ext"
 
 echo "DEBUG: out_pattern=$out_pattern"
 
-# Check if interval is time-based (ends with s,ms,us,ns,m,h)
-if [[ "$interval" =~ ^([0-9]+(\.[0-9]+)?)(s|ms|us|ns|m|h)$ ]]; then
+if [[ "$interval" =~ ^([0-9]+(\.[0-9]+)?)(s|ms|us|ns|m|h)$ ]]; then  # Check if interval is time-based (ends with s,ms,us,ns,m,h)
     # Time-based extraction (including fractional seconds)
-    num=${BASH_REMATCH[1]}
-    unit=${BASH_REMATCH[3]}
+    num="${BASH_REMATCH[1]}"
+    unit="${BASH_REMATCH[3]}"
     case "$unit" in
         s)   seconds=$num ;;
         ms)  seconds=$(awk "BEGIN{print $num/1000}") ;;
@@ -84,9 +101,11 @@ if [[ "$interval" =~ ^([0-9]+(\.[0-9]+)?)(s|ms|us|ns|m|h)$ ]]; then
         h)   seconds=$(awk "BEGIN{print $num*3600}") ;;
     esac
     fps=$(awk "BEGIN{print 1/$seconds}")
+    # shellcheck disable=SC2086
     ffmpeg -hide_banner -loglevel error -stats -i "$video_file" -vf "fps=$fps" $quality "$out_pattern"
 elif [[ "$interval" =~ ^[0-9]+$ ]]; then
     # Frame-based extraction (only for integer intervals)
+    # shellcheck disable=SC2086
     ffmpeg -hide_banner -loglevel error -stats -i "$video_file" -vf "select=not(mod(n\,$interval))" -vsync vfr $quality "$out_pattern"
 else
     echo "ERROR: Invalid interval format: $interval"
