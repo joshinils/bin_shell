@@ -83,13 +83,8 @@ else
     fi
 fi
 
-# Build output pattern
-out_pattern="$out_dir/${name_no_ext}_frame_%0${padding_length}d.$out_ext"
-
-echo "DEBUG: out_pattern=$out_pattern"
-
-if [[ "$interval" =~ ^([0-9]+(\.[0-9]+)?)(s|ms|us|ns|m|h)$ ]]; then  # Check if interval is time-based (ends with s,ms,us,ns,m,h)
-    # Time-based extraction (including fractional seconds)
+# Use ffmpeg to extract frames with filenames based on the timestamp (PTS in ms)
+if [[ "$interval" =~ ^([0-9]+(\.[0-9]+)?)(s|ms|us|ns|m|h)$ ]]; then  # Time-based extraction
     num="${BASH_REMATCH[1]}"
     unit="${BASH_REMATCH[3]}"
     case "$unit" in
@@ -101,14 +96,17 @@ if [[ "$interval" =~ ^([0-9]+(\.[0-9]+)?)(s|ms|us|ns|m|h)$ ]]; then  # Check if 
         h)   seconds=$(awk "BEGIN{print $num*3600}") ;;
     esac
     fps=$(awk "BEGIN{print 1/$seconds}")
-    # shellcheck disable=SC2086
-    ffmpeg -hide_banner -loglevel error -stats -i "$video_file" -vf "fps=$fps" $quality "$out_pattern"
-elif [[ "$interval" =~ ^[0-9]+$ ]]; then
-    # Frame-based extraction (only for integer intervals)
-    # shellcheck disable=SC2086
-    ffmpeg -hide_banner -loglevel error -stats -i "$video_file" -vf "select=not(mod(n\,$interval))" -vsync vfr $quality "$out_pattern"
+    ffmpeg -hide_banner -loglevel error -stats -vsync 0 -copyts -fps_mode passthrough -enc_time_base 0.001 -i "$video_file" -vf "fps=$fps" ${quality:+$quality} -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
+elif [[ "$interval" =~ ^[0-9]+$ ]]; then  # Frame-based extraction (only for integer intervals)
+    ffmpeg -hide_banner -loglevel error -stats -vsync 0 -copyts -fps_mode passthrough -enc_time_base 0.001 -i "$video_file" -vf "select=not(mod(n\,$interval))" -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
 else
     echo "ERROR: Invalid interval format: $interval"
     exit 2
 fi
 
+# Rename files to human-readable timestamps
+for f in "$out_dir/${name_no_ext}_frame_"*".${out_ext}"; do
+    pts=$(echo "$f" | sed -E 's/.*_frame_([0-9]+)\..*/\1/')
+    ts=$(awk -v ms="$pts" 'BEGIN { s=int(ms/1000); ms=ms%1000; h=int(s/3600); m=int((s%3600)/60); s=s%60; printf("%02d-%02d-%02d.%03d", h, m, s, ms) }')
+    mv -n "$f" "$out_dir/${name_no_ext}_$ts.$out_ext"
+done
