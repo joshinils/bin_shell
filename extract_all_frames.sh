@@ -53,7 +53,7 @@ fi
 
 base_name="$(basename -- "$video_file")"
 name_no_ext="${base_name%.*}"
-out_dir="${name_no_ext}.${interval}.d/extracted_thumbs"
+out_dir="${name_no_ext}.d/extracted_thumbs"
 mkdir -p "$out_dir"
 
 # Get total frame count
@@ -61,14 +61,6 @@ frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries strea
 frames=${frames//,/}
 if ! [[ "$frames" =~ ^[0-9]+$ ]]; then
     frames=$(ffprobe -v error -select_streams v:0 -show_entries stream=nb_frames -of default=nokey=1:noprint_wrappers=1 -- "$video_file")
-fi
-
-if [[ "$frames" =~ ^[0-9]+$ ]]; then
-    padding_length=${#frames}
-else
-    echo "WARNING: Could not determine frame count, using default padding length of 5."
-    frames="unknown"
-    padding_length=5
 fi
 
 quality=""
