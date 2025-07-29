@@ -96,9 +96,9 @@ if [[ "$interval" =~ ^([0-9]+(\.[0-9]+)?)(s|ms|us|ns|m|h)$ ]]; then  # Time-base
         h)   seconds=$(awk "BEGIN{print $num*3600}") ;;
     esac
     fps=$(awk "BEGIN{print 1/$seconds}")
-    ffmpeg -hide_banner -loglevel error -stats -vsync 0 -copyts -fps_mode passthrough -enc_time_base 0.001 -i "$video_file" -vf "fps=$fps" ${quality:+$quality} -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
+    ffmpeg -hide_banner -loglevel error -stats -vsync 0 -i "$video_file" -copyts -fps_mode passthrough -enc_time_base 0.001 -vf "fps=$fps" ${quality:+$quality} -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
 elif [[ "$interval" =~ ^[0-9]+$ ]]; then  # Frame-based extraction (only for integer intervals)
-    ffmpeg -hide_banner -loglevel error -stats -vsync 0 -copyts -fps_mode passthrough -enc_time_base 0.001 -i "$video_file" -vf "select=not(mod(n\,$interval))" -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
+    ffmpeg -hide_banner -loglevel error -stats -vsync 0 -i "$video_file" -copyts -fps_mode passthrough -enc_time_base 0.001 -vf "select=not(mod(n\,$interval))" -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
 else
     echo "ERROR: Invalid interval format: $interval"
     exit 2
