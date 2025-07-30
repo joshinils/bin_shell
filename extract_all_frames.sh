@@ -15,8 +15,8 @@ look at #file:gen_thumbs for inspiration'
 
 set -e
 set -o pipefail
-
 SCRIPT_PATH="${BASH_SOURCE[0]}"
+# shellcheck disable=SC2317  # Don't warn about unreachable commands in this function
 error() {
     local lineno=$1
     local linecode
@@ -26,79 +26,121 @@ error() {
 trap 'error "${LINENO}"' ERR
 
 
+function main(){
+    if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+        echo "Usage: $0 <video_file> [interval]"
+        echo "    interval: every nth frame (default=1), or time unit (e.g. 1s, 100ms, 2m, 1h)"
+        exit 1
+    fi
 
-if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
-    echo "Usage: $0 <video_file> [interval]"
-    echo "    interval: every nth frame (default=1), or time unit (e.g. 1s, 100ms, 2m, 1h)"
-    exit 1
-fi
 
+    video_file="$1"
+    interval="${2:-1}"
 
-video_file="$1"
-interval="${2:-1}"
+    # Validate interval: must be strictly greater than 0
+    if [[ "$interval" =~ ^-?[0-9]+(\.[0-9]+)?(s|ms|us|ns|m|h)?$ ]]; then
+        # Extract numeric part
+        num=$(echo "$interval" | grep -oE '^-?[0-9]+(\.[0-9]+)?')
 
-# Validate interval: must be strictly greater than 0
-if [[ "$interval" =~ ^-?[0-9]+(\.[0-9]+)?(s|ms|us|ns|m|h)?$ ]]; then
-    # Extract numeric part
-    num=$(echo "$interval" | grep -oE '^-?[0-9]+(\.[0-9]+)?')
+        if (( $(echo "$num <= 0" | bc -l) )); then
+            echo "ERROR: Interval must be greater than zero."
+            exit 2
+        fi
+    else
+        echo "ERROR: Invalid interval format: $interval"
+        exit 3
+    fi
 
-    if (( $(echo "$num <= 0" | bc -l) )); then
-        echo "ERROR: Interval must be greater than zero."
+    base_name="$(basename -- "$video_file")"
+    name_no_ext="${base_name%.*}"
+    out_dir="${name_no_ext}.d/extracted_thumbs"
+    mkdir -p "$out_dir"
+
+    # Get total frame count
+    frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 -- "$video_file")
+    frames=${frames//,/}
+    if ! [[ "$frames" =~ ^[0-9]+$ ]]; then
+        frames=$(ffprobe -v error -select_streams v:0 -show_entries stream=nb_frames -of default=nokey=1:noprint_wrappers=1 -- "$video_file")
+    fi
+
+    quality=""
+    # Choose extension: png for <1000 frames, jpg for more
+    if [[ "$frames" =~ ^[0-9]+$ ]] && [ "$frames" -le 1000 ]; then
+        out_ext="png"
+    else
+        out_ext="jpg"
+        quality="-q:v 4"
+        if [ "$frames" -le 10000 ]; then
+            quality="-q:v 2"
+        fi
+    fi
+
+    # Check for at least 100G free space on the output filesystem
+    min_free_gb=100
+    out_fs=$(df -P "$out_dir" | tail -1 | awk '{print $4}')
+    # df returns blocks, usually 1K per block
+    free_gb=$((out_fs / 1024 / 1024))
+    if [ "$free_gb" -lt "$min_free_gb" ]; then
+        echo "WARNING: Not enough free space on the output filesystem. At least ${min_free_gb}G required, but only ${free_gb}G available."
+        if [ -t 1 ] || is_screen_attached; then
+            IFS= read -r -t 10 -p "Do you want to continue anyway? (y/N): " answer
+            case "$answer" in
+                [Yy]* ) ;;
+                * ) exit 10 ;;
+            esac
+        else
+            exit 10
+        fi
+    fi
+
+    # Use ffmpeg to extract frames with filenames based on the timestamp (PTS in ms)
+    if [[ "$interval" =~ ^([0-9]+(\.[0-9]+)?)(s|ms|us|ns|m|h)$ ]]; then  # Time-based extraction
+        num="${BASH_REMATCH[1]}"
+        unit="${BASH_REMATCH[3]}"
+        case "$unit" in
+            s)   seconds=$num ;;
+            ms)  seconds=$(awk "BEGIN{print $num/1000}") ;;
+            us)  seconds=$(awk "BEGIN{print $num/1000000}") ;;
+            ns)  seconds=$(awk "BEGIN{print $num/1000000000}") ;;
+            m)   seconds=$(awk "BEGIN{print $num*60}") ;;
+            h)   seconds=$(awk "BEGIN{print $num*3600}") ;;
+        esac
+        fps=$(awk "BEGIN{print 1/$seconds}")
+        ffmpeg -hide_banner -loglevel error -stats -vsync 0 -i "$video_file" -copyts -fps_mode passthrough -enc_time_base 0.001 -vf "fps=$fps" ${quality:+$quality} -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
+    elif [[ "$interval" =~ ^[0-9]+$ ]]; then  # Frame-based extraction (only for integer intervals)
+        ffmpeg -hide_banner -loglevel error -stats -vsync 0 -i "$video_file" -copyts -fps_mode passthrough -enc_time_base 0.001 -vf "select=not(mod(n\,$interval))" -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
+    else
+        echo "ERROR: Invalid interval format: $interval"
         exit 2
     fi
-else
-    echo "ERROR: Invalid interval format: $interval"
-    exit 3
-fi
 
-base_name="$(basename -- "$video_file")"
-name_no_ext="${base_name%.*}"
-out_dir="${name_no_ext}.d/extracted_thumbs"
-mkdir -p "$out_dir"
+    # Rename files to human-readable timestamps
+    for f in "$out_dir/${name_no_ext}_frame_"*".${out_ext}"; do
+        pts=$(echo "$f" | sed -E 's/.*_frame_([0-9]+)\..*/\1/')
+        ts=$(awk -v ms="$pts" 'BEGIN { s=int(ms/1000); ms=ms%1000; h=int(s/3600); m=int((s%3600)/60); s=s%60; printf("%02d-%02d-%02d.%03d", h, m, s, ms) }')
+        mv -n "$f" "$out_dir/${name_no_ext}_$ts.$out_ext"
+    done
+}
 
-# Get total frame count
-frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 -- "$video_file")
-frames=${frames//,/}
-if ! [[ "$frames" =~ ^[0-9]+$ ]]; then
-    frames=$(ffprobe -v error -select_streams v:0 -show_entries stream=nb_frames -of default=nokey=1:noprint_wrappers=1 -- "$video_file")
-fi
+is_screen_attached() {
+    # Check if running in screen or tmux and if attached
 
-quality=""
-# Choose extension: png for <1000 frames, jpg for more
-if [[ "$frames" =~ ^[0-9]+$ ]] && [ "$frames" -le 1000 ]; then
-    out_ext="png"
-else
-    out_ext="jpg"
-    quality="-q:v 4"
-    if [ "$frames" -le 10000 ]; then
-        quality="-q:v 2"
+    if [ -n "$STY" ]; then
+        # In screen, check if attached
+        if screen -ls | grep -q "Attached"; then
+            return 0
+        else
+            return 1
+        fi
+    elif [ -n "$TMUX" ]; then
+        # In tmux, check if attached
+        if tmux list-clients 2>/dev/null | grep -q "(attached)"; then
+            return 0
+        else
+            return 1
+        fi
     fi
-fi
+    return 1
+}
 
-# Use ffmpeg to extract frames with filenames based on the timestamp (PTS in ms)
-if [[ "$interval" =~ ^([0-9]+(\.[0-9]+)?)(s|ms|us|ns|m|h)$ ]]; then  # Time-based extraction
-    num="${BASH_REMATCH[1]}"
-    unit="${BASH_REMATCH[3]}"
-    case "$unit" in
-        s)   seconds=$num ;;
-        ms)  seconds=$(awk "BEGIN{print $num/1000}") ;;
-        us)  seconds=$(awk "BEGIN{print $num/1000000}") ;;
-        ns)  seconds=$(awk "BEGIN{print $num/1000000000}") ;;
-        m)   seconds=$(awk "BEGIN{print $num*60}") ;;
-        h)   seconds=$(awk "BEGIN{print $num*3600}") ;;
-    esac
-    fps=$(awk "BEGIN{print 1/$seconds}")
-    ffmpeg -hide_banner -loglevel error -stats -vsync 0 -i "$video_file" -copyts -fps_mode passthrough -enc_time_base 0.001 -vf "fps=$fps" ${quality:+$quality} -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
-elif [[ "$interval" =~ ^[0-9]+$ ]]; then  # Frame-based extraction (only for integer intervals)
-    ffmpeg -hide_banner -loglevel error -stats -vsync 0 -i "$video_file" -copyts -fps_mode passthrough -enc_time_base 0.001 -vf "select=not(mod(n\,$interval))" -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
-else
-    echo "ERROR: Invalid interval format: $interval"
-    exit 2
-fi
-
-# Rename files to human-readable timestamps
-for f in "$out_dir/${name_no_ext}_frame_"*".${out_ext}"; do
-    pts=$(echo "$f" | sed -E 's/.*_frame_([0-9]+)\..*/\1/')
-    ts=$(awk -v ms="$pts" 'BEGIN { s=int(ms/1000); ms=ms%1000; h=int(s/3600); m=int((s%3600)/60); s=s%60; printf("%02d-%02d-%02d.%03d", h, m, s, ms) }')
-    mv -n "$f" "$out_dir/${name_no_ext}_$ts.$out_ext"
-done
+[[ ${BASH_SOURCE[0]} = "$0" ]] && main "$@"; exit
