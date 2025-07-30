@@ -26,22 +26,40 @@ error() {
 trap 'error "${LINENO}"' ERR
 
 
-function main(){
+
+function main() {
     if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
         echo "Usage: $0 <video_file> [interval]"
         echo "    interval: every nth frame (default=1), or time unit (e.g. 1s, 100ms, 2m, 1h)"
         exit 1
     fi
 
-
     video_file="$1"
     interval="${2:-1}"
 
+    validate_interval "$interval"
+
+    base_name="$(basename -- "$video_file")"
+    name_no_ext="${base_name%.*}"
+    out_dir="${name_no_ext}.d/extracted_thumbs"
+    mkdir -p "$out_dir"
+
+    frames=$(get_frame_count "$video_file")
+    IFS='|' read -r out_ext quality <<< "$(choose_output_format "$frames")"
+
+    check_free_space "$out_dir"
+
+    extract_frames "$video_file" "$interval" "$out_dir" "$name_no_ext" "$out_ext" "$quality"
+
+    rename_frames "$out_dir" "$name_no_ext" "$out_ext"
+}
+
+function validate_interval() {
+    local interval="$1"
     # Validate interval: must be strictly greater than 0
     if [[ "$interval" =~ ^-?[0-9]+(\.[0-9]+)?(s|ms|us|ns|m|h)?$ ]]; then
-        # Extract numeric part
+        local num
         num=$(echo "$interval" | grep -oE '^-?[0-9]+(\.[0-9]+)?')
-
         if (( $(echo "$num <= 0" | bc -l) )); then
             echo "ERROR: Interval must be greater than zero."
             exit 2
@@ -50,23 +68,28 @@ function main(){
         echo "ERROR: Invalid interval format: $interval"
         exit 3
     fi
+}
 
-    base_name="$(basename -- "$video_file")"
-    name_no_ext="${base_name%.*}"
-    out_dir="${name_no_ext}.d/extracted_thumbs"
-    mkdir -p "$out_dir"
+function get_frame_count() {
+    local video_file="$1"
 
-    # Get total frame count
+    local frames
     frames=$(ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 -- "$video_file")
     frames=${frames//,/}
     if ! [[ "$frames" =~ ^[0-9]+$ ]]; then
         frames=$(ffprobe -v error -select_streams v:0 -show_entries stream=nb_frames -of default=nokey=1:noprint_wrappers=1 -- "$video_file")
     fi
+    echo "$frames"
+}
 
-    quality=""
-    # Choose extension: png for <1000 frames, jpg for more
+function choose_output_format() {
+    # png for <1000 frames, jpg for more
+    local frames="$1"
+
+    local out_ext quality
     if [[ "$frames" =~ ^[0-9]+$ ]] && [ "$frames" -le 1000 ]; then
         out_ext="png"
+        quality=""
     else
         out_ext="jpg"
         quality="-q:v 4"
@@ -74,11 +97,15 @@ function main(){
             quality="-q:v 2"
         fi
     fi
+    echo "$out_ext|$quality"
+}
 
-    # Check for at least 100G free space on the output filesystem
-    min_free_gb=100
-    out_fs=$(df -P "$out_dir" | tail -1 | awk '{print $4}')
-    # df returns blocks, usually 1K per block
+function check_free_space() {
+    local out_dir="$1"
+
+    local min_free_gb=100
+    local out_fs free_gb
+    out_fs=$(df -P "$out_dir" | tail -1 | awk '{print $4}')  # df returns blocks, usually 1K per block
     free_gb=$((out_fs / 1024 / 1024))
     if [ "$free_gb" -lt "$min_free_gb" ]; then
         echo "WARNING: Not enough free space on the output filesystem. At least ${min_free_gb}G required, but only ${free_gb}G available."
@@ -92,9 +119,19 @@ function main(){
             exit 10
         fi
     fi
+}
+
+function extract_frames() {
+    local video_file="$1"
+    local interval="$2"
+    local out_dir="$3"
+    local name_no_ext="$4"
+    local out_ext="$5"
+    local quality="$6"
 
     # Use ffmpeg to extract frames with filenames based on the timestamp (PTS in ms)
     if [[ "$interval" =~ ^([0-9]+(\.[0-9]+)?)(s|ms|us|ns|m|h)$ ]]; then  # Time-based extraction
+        local num unit seconds fps
         num="${BASH_REMATCH[1]}"
         unit="${BASH_REMATCH[3]}"
         case "$unit" in
@@ -113,8 +150,14 @@ function main(){
         echo "ERROR: Invalid interval format: $interval"
         exit 2
     fi
+}
 
+function rename_frames() {
     # Rename files to human-readable timestamps
+    local out_dir="$1"
+    local name_no_ext="$2"
+    local out_ext="$3"
+
     for f in "$out_dir/${name_no_ext}_frame_"*".${out_ext}"; do
         pts=$(echo "$f" | sed -E 's/.*_frame_([0-9]+)\..*/\1/')
         ts=$(awk -v ms="$pts" 'BEGIN { s=int(ms/1000); ms=ms%1000; h=int(s/3600); m=int((s%3600)/60); s=s%60; printf("%02d-%02d-%02d.%03d", h, m, s, ms) }')
@@ -122,7 +165,7 @@ function main(){
     done
 }
 
-is_screen_attached() {
+function is_screen_attached() {
     # Check if running in screen or tmux and if attached
 
     if [ -n "$STY" ]; then
