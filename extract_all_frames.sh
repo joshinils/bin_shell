@@ -143,9 +143,9 @@ function extract_frames() {
             h)   seconds=$(awk "BEGIN{print $num*3600}") ;;
         esac
         fps=$(awk "BEGIN{print 1/$seconds}")
-        ffmpeg -hide_banner -loglevel error -stats -vsync 0 -i "$video_file" -copyts -fps_mode passthrough -enc_time_base 0.001 -vf "fps=$fps" ${quality:+$quality} -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
+        ffmpeg_tqdm -hide_banner -loglevel error -stats -vsync 0 -i "$video_file" -copyts -fps_mode passthrough -enc_time_base 0.001 -vf "fps=$fps" ${quality:+$quality} -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
     elif [[ "$interval" =~ ^[0-9]+$ ]]; then  # Frame-based extraction (only for integer intervals)
-        ffmpeg -hide_banner -loglevel error -stats -vsync 0 -i "$video_file" -copyts -fps_mode passthrough -enc_time_base 0.001 -vf "select=not(mod(n\,$interval))" -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
+        ffmpeg_tqdm -hide_banner -loglevel error -stats -vsync 0 -i "$video_file" -copyts -fps_mode passthrough -enc_time_base 0.001 -vf "select=not(mod(n\,$interval))" -f image2 -frame_pts 1 "$out_dir/${name_no_ext}_frame_%d.$out_ext"
     else
         echo "ERROR: Invalid interval format: $interval"
         exit 2
@@ -158,11 +158,17 @@ function rename_frames() {
     local name_no_ext="$2"
     local out_ext="$3"
 
-    for f in "$out_dir/${name_no_ext}_frame_"*".${out_ext}"; do
+    local files_list total_files count
+    files_list=("$out_dir/${name_no_ext}_frame_"*".${out_ext}")
+    total_files=${#files_list[@]}
+    count=0
+    for f in "${files_list[@]}"; do
         pts=$(echo "$f" | sed -E 's/.*_frame_([0-9]+)\..*/\1/')
         ts=$(awk -v ms="$pts" 'BEGIN { s=int(ms/1000); ms=ms%1000; h=int(s/3600); m=int((s%3600)/60); s=s%60; printf("%02d-%02d-%02d.%03d", h, m, s, ms) }')
         mv -n "$f" "$out_dir/${name_no_ext}_$ts.$out_ext"
-    done
+        count=$((count+1))
+        echo "$count" | pv -n -s "$total_files" > /dev/null
+    done | pv -n -s "$total_files" > /dev/null
 }
 
 function is_screen_attached() {
