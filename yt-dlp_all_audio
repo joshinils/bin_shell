@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+Docstring for yt-dlp_all_audio
+"""
+
+# pylint: disable=C0103
 
 import argparse
 import multiprocessing as mp
@@ -7,26 +12,24 @@ import subprocess
 import traceback
 from collections import defaultdict
 from inspect import currentframe, getframeinfo
-from typing import Dict, List, Set, Tuple
 
 import tqdm
 import yt_dlp
 
 
 def print_lineno() -> str:
+    """Get line number of the caller in it's source code."""
     cf = currentframe()
     return f"{getframeinfo(cf).filename}:{cf.f_back.f_lineno}"
 
 
-def merge(files: List[str], out_name) -> str:
+def merge(files: list[str], out_name) -> str:
     commands = ["mkvmerge", "-v", "-o", out_name] + files
 
     try:
         sub_process_result = subprocess.run(
             commands,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+            capture_output=True)
         status_ok = sub_process_result.returncode == 0
         warning = sub_process_result.returncode == 1
         error = sub_process_result.returncode != 0 and sub_process_result.returncode != 1
@@ -63,9 +66,7 @@ def set_track_title(temp_name: str, out_name: str, title: str) -> str:
     try:
         sub_process_result = subprocess.run(
             commands,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+            capture_output=True)
         status_ok = sub_process_result.returncode == 0
         warning = sub_process_result.returncode == 1
         error = sub_process_result.returncode != 0 and sub_process_result.returncode != 1
@@ -94,12 +95,12 @@ def set_track_title(temp_name: str, out_name: str, title: str) -> str:
     return out_name
 
 
-def download_format_wrap(args: Tuple[Tuple[str, str], str, str, float]) -> str:
+def download_format_wrap(args: tuple[tuple[str, str], str, str, float]) -> str:
     format_tuple, url, title, ratelimit = args
     return download_format(format_tuple, url, title, ratelimit)
 
 
-def download_format(format_tuple: Tuple[str, str], url: str, title: str, ratelimit: float) -> str:
+def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelimit: float) -> str:
     format, track_title = format_tuple
     out_name = f"{title}.{format}.mkv"
     ydl_opts = {
@@ -133,7 +134,7 @@ def download_subs(url: str, title: str) -> None:
         print(error_code)
 
 
-def get_download_ids(url: str) -> Tuple[List[Tuple[str, str]], str]:
+def get_download_ids(url: str) -> tuple[list[tuple[str, str]], str]:
     ydl_opts = {
         'concurrent_fragment_downloads': 42,
     }
@@ -144,12 +145,12 @@ def get_download_ids(url: str) -> Tuple[List[Tuple[str, str]], str]:
         # ℹ️ ydl.sanitize_info makes the info json-serializable
         info = ydl.sanitize_info(info)
         formats = info["formats"]
-        video_resolutions: Dict[int, Set[Tuple[str, str]]] = defaultdict(set)
-        audio_options: Dict[str, List[Tuple[str, str]]] = defaultdict(list)
+        video_resolutions: dict[int, set[tuple[str, str]]] = defaultdict(set)
+        audio_options: dict[str, list[tuple[str, str]]] = defaultdict(list)
 
         best_resolution = 0
 
-        format: Dict
+        format: dict
         for format in formats:
             language = format.get('language', 'und')
             format_note = f"[{language}] {format.get('format_note', '')}"
