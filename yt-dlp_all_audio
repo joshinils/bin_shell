@@ -3,12 +3,11 @@
 Docstring for yt-dlp_all_audio
 """
 
-# pylint: disable=C0103
-
 import argparse
 import multiprocessing as mp
 import pathlib
 import subprocess
+import sys
 import traceback
 from collections import defaultdict
 from inspect import currentframe, getframeinfo
@@ -20,19 +19,33 @@ import yt_dlp
 def print_lineno() -> str:
     """Get line number of the caller in it's source code."""
     cf = currentframe()
-    return f"{getframeinfo(cf).filename}:{cf.f_back.f_lineno}"
+    if not cf:
+        return "no_frame_found:?"
+    lineno = cf.f_back.f_lineno if cf.f_back else "?"
+    return f"{getframeinfo(cf).filename}:{lineno}"
 
 
-def merge(files: list[str], out_name) -> str:
+def merge(files: list[str], out_name: str) -> str:
+    """
+    merge multiple files into one using mkvmerge
+
+    :param files: List of file paths to merge
+    :type files: list[str]
+    :param out_name: Output file path
+    :return out_name: Output file path
+    """
+
     commands = ["mkvmerge", "-v", "-o", out_name] + files
 
     try:
         sub_process_result = subprocess.run(
             commands,
-            capture_output=True)
+            capture_output=True,
+            check=False
+        )
         status_ok = sub_process_result.returncode == 0
         warning = sub_process_result.returncode == 1
-        error = sub_process_result.returncode != 0 and sub_process_result.returncode != 1
+        error = sub_process_result.returncode not in (0, 1)
 
         if not status_ok:
             sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
@@ -48,11 +61,11 @@ def merge(files: list[str], out_name) -> str:
             if error:
                 print(print_lineno(), f"{sub_process_std_out=}")
                 print(print_lineno(), f"{sub_process_std_err=}")
-                exit(3)
-    except Exception as e:
-        print(traceback.print_exc())
+                sys.exit(3)
+    except Exception as e:  # pylint: disable=W0718  # Catching broad exception
+        traceback.print_exc()
         print(type(e), e)
-        exit(2)
+        sys.exit(2)
 
     for path in files:
         pathlib.Path(path).unlink()
@@ -61,12 +74,25 @@ def merge(files: list[str], out_name) -> str:
 
 
 def set_track_title(temp_name: str, out_name: str, title: str) -> str:
+    """
+    set_track_title sets the title of the video track in the output file.
+
+    Arguments:
+        temp_name -- input file name, is removed after processing
+        out_name -- output file name
+        title -- title to set for the video track
+
+    Returns:
+        out_name -- same as argument
+    """
     commands = ['mkvmerge', '-v', '-o', out_name, '--track-name', f'0:{title}', temp_name]
 
     try:
         sub_process_result = subprocess.run(
             commands,
-            capture_output=True)
+            capture_output=True,
+            check=False
+        )
         status_ok = sub_process_result.returncode == 0
         warning = sub_process_result.returncode == 1
         error = sub_process_result.returncode != 0 and sub_process_result.returncode != 1
@@ -85,27 +111,36 @@ def set_track_title(temp_name: str, out_name: str, title: str) -> str:
             if error:
                 print(print_lineno(), f"{sub_process_std_out=}")
                 print(print_lineno(), f"{sub_process_std_err=}")
-                exit(3)
-    except Exception as e:
-        print(traceback.print_exc())
+                sys.exit(3)
+    except Exception as e:  # pylint: disable=W0718  # Catching broad exception
+        traceback.print_exc()
         print(type(e), e)
-        exit(2)
+        sys.exit(2)
 
     pathlib.Path(temp_name).unlink()
     return out_name
 
 
-def download_format_wrap(args: tuple[tuple[str, str], str, str, float]) -> str:
-    format_tuple, url, title, ratelimit = args
+def download_format_wrap(args_tuple: tuple[tuple[str, str], str, str, float]) -> str:
+    """
+    download_format_wrap wraps the download_format function so its signature matches the expected signature for multiprocessing.
+
+    Arguments:
+        args_tuple -- A tuple containing the arguments for download_format.
+
+    Returns:
+        The result of download_format.
+    """
+    format_tuple, url, title, ratelimit = args_tuple
     return download_format(format_tuple, url, title, ratelimit)
 
 
 def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelimit: float) -> str:
-    format, track_title = format_tuple
-    out_name = f"{title}.{format}.mkv"
+    specified_format, track_title = format_tuple
+    out_name = f"{title}.{specified_format}.mkv"
     ydl_opts = {
         'ignoreerrors': True,
-        'format': format,
+        'format': specified_format,
         'outtmpl': out_name,
         'concurrent_fragment_downloads': 42,
         'ratelimit': ratelimit / 42,  # bytes per second
@@ -119,13 +154,20 @@ def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelim
     return track_title
 
 
-def download_subs(url: str, title: str) -> None:
+def download_subs(url: str, outtmpl_yt_dlp__title: str) -> None:
+    """
+    download_subs downloads subtitles for a given video URL.
+
+    Arguments:
+        url -- The URL of the video to download subtitles for.
+        outtmpl_yt_dlp__title -- The title to use for the downloaded subtitle file.
+    """
     ydl_opts = {
         'ignoreerrors': True,
         'writesubtitles': True,
         'allsubtitles': True,
         'skip_download': True,
-        'outtmpl': title,
+        'outtmpl': outtmpl_yt_dlp__title,
         'concurrent_fragment_downloads': 42,
     }
 
@@ -135,42 +177,54 @@ def download_subs(url: str, title: str) -> None:
 
 
 def get_download_ids(url: str) -> tuple[list[tuple[str, str]], str]:
+    """
+    get_download_ids fetches the download ids and title for a given url.
+
+    Arguments:
+        url -- The URL to fetch download IDs from.
+
+    Returns:
+        structured info
+    """
     ydl_opts = {
         'concurrent_fragment_downloads': 42,
     }
+
     downloadables = []
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
 
-        # ℹ️ ydl.sanitize_info makes the info json-serializable
+        # info: ydl.sanitize_info makes the info json-serializable
         info = ydl.sanitize_info(info)
-        formats = info["formats"]
+        download_formats = info["formats"]
         video_resolutions: dict[int, set[tuple[str, str]]] = defaultdict(set)
         audio_options: dict[str, list[tuple[str, str]]] = defaultdict(list)
 
         best_resolution = 0
 
-        format: dict
-        for format in formats:
-            language = format.get('language', 'und')
-            format_note = f"[{language}] {format.get('format_note', '')}"
-            if format["audio_ext"] == "none":
-                width = format.get("width", 1)
-                height = format.get("height", 1)
+        download_format_dict: dict
+        for download_format_dict in download_formats:
+            language = download_format_dict.get('language', 'und')
+            format_note = f"[{language}] {download_format_dict.get('format_note', '')}"
+            if download_format_dict["audio_ext"] == "none":
+                width = download_format_dict.get("width", 1)
+                height = download_format_dict.get("height", 1)
                 resolution = width * height
-                video_resolutions[resolution].add((format["format_id"], format_note))
+                video_resolutions[resolution].add((download_format_dict["format_id"], format_note))
                 if best_resolution < resolution:
                     best_resolution = resolution
             else:
-                format_id: str = format["format_id"]
-                unique_name = format_note + " - " + format_id
+                format_id: str = download_format_dict["format_id"]
+                unique_name: str = format_note + " - " + format_id
                 unique_name = unique_name.rstrip("01233456789").rstrip("-")
                 audio_options[unique_name].append((format_id, format_note))
+
         for unique_name, audio_names in audio_options.items():
             downloadables.append(audio_names[0])
+
         for video_option in video_resolutions[best_resolution]:
             downloadables.append(video_option)
-            break
+            # break  # get *all* best resolutions if there are multiple
 
     title = info["title"]
     extractor = info.get("extractor")
@@ -188,15 +242,15 @@ def get_download_ids(url: str) -> tuple[list[tuple[str, str]], str]:
 
 
 def main(url: str, ratelimit: float) -> None:
-    formats, title = get_download_ids(url)
+    downloadables_formats, title = get_download_ids(url)
     title = title.replace("/", "⧸")
 
     download_subs(url, title)
 
     tasks = []
-    for format in formats:
-        tasks.append((format, url, title, ratelimit))
-        print(format)
+    for downloadable_format in downloadables_formats:
+        tasks.append((downloadable_format, url, title, ratelimit))
+        print(downloadable_format)
 
     downloaded_names = []
     with mp.Pool(processes=1) as mp_pool_download:
@@ -229,8 +283,8 @@ if __name__ == "__main__":
         nargs="?",
     )
 
-    args = parser.parse_args()
+    parsed_arguments = parser.parse_args()
 
-    url: int = args.url
-    ratelimit: float = args.ratelimit
-    main(url, ratelimit)
+    argument_url: str = parsed_arguments.url
+    argument_ratelimit: float = parsed_arguments.ratelimit
+    main(argument_url, argument_ratelimit)

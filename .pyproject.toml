@@ -14,5 +14,23 @@ max-line-length = 300
 jobs = 0
 persistent = true
 suggestion-mode = true
-enable = ["raw-checker-failed", "bad-inline-option", "locally-disabled", "file-ignored", "suppressed-message", "useless-suppression", "deprecated-pragma", "use-implicit-booleaness-not-comparison-to-string", "use-implicit-booleaness-not-comparison-to-zero", "use-symbolic-message-instead"]  # idk, was in the generated file as disable, let's see what they do
+enable = [
+    "raw-checker-failed",
+    "bad-inline-option",
+    "locally-disabled",
+    "file-ignored",
+    "suppressed-message",
+    "useless-suppression",
+    "deprecated-pragma",
+    # "use-implicit-booleaness-not-comparison-to-string",
+    # "use-implicit-booleaness-not-comparison-to-zero",
+    "use-symbolic-message-instead",
+] # idk, was in the generated file as disable, let's see what they do
 notes = ["FIXME", "XXX", "TODO", "todo", "fix", "fixme", "xxx", "FIX"]
+disable = ["invalid-name"]
+
+[tool.pyright]
+reportMissingTypeStubs = false
+reportUnknownMemberTypes = false
+reportUnknownVariableType = false
+reportUnknownVariableTypes = false
