@@ -10,10 +10,17 @@ import subprocess
 import sys
 import traceback
 from collections import defaultdict
-from inspect import currentframe, getframeinfo
+from inspect import currentframe, getframeinfo, stack
 
 import tqdm
 import yt_dlp
+
+
+def eprint(*args, **kwargs) -> None:  # type: ignore
+    """
+    eprint prints to stderr with info of the caller.
+    """
+    print(f"{stack()[1][1]}:{stack()[1][2]};{stack()[1][3]}", *args, file=sys.stderr, **kwargs)
 
 
 def print_lineno() -> str:
@@ -48,8 +55,8 @@ def merge(files: list[str], out_name: str) -> str:
         error = sub_process_result.returncode not in (0, 1)
 
         if not status_ok:
-            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
-            sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
+            sub_process_std_out = sub_process_result.stdout.decode("utf-8", errors="ignore")
+            sub_process_std_err = sub_process_result.stderr.decode("utf-8", errors="ignore")
             print(print_lineno(), f"{sub_process_result.returncode=}")
 
             if warning:
@@ -85,7 +92,7 @@ def set_track_title(temp_name: str, out_name: str, title: str) -> str:
     Returns:
         out_name -- same as argument
     """
-    commands = ['mkvmerge', '-v', '-o', out_name, '--track-name', f'0:{title}', temp_name]
+    commands = ["mkvmerge", "-v", "-o", out_name, "--track-name", f"0:{title}", temp_name]
 
     try:
         sub_process_result = subprocess.run(
@@ -98,8 +105,8 @@ def set_track_title(temp_name: str, out_name: str, title: str) -> str:
         error = sub_process_result.returncode != 0 and sub_process_result.returncode != 1
 
         if not status_ok:
-            sub_process_std_out = sub_process_result.stdout.decode('utf-8', errors="ignore")
-            sub_process_std_err = sub_process_result.stderr.decode('utf-8', errors="ignore")
+            sub_process_std_out = sub_process_result.stdout.decode("utf-8", errors="ignore")
+            sub_process_std_err = sub_process_result.stderr.decode("utf-8", errors="ignore")
             print(print_lineno(), f"{sub_process_result.returncode=}")
 
             if warning:
@@ -121,7 +128,7 @@ def set_track_title(temp_name: str, out_name: str, title: str) -> str:
     return out_name
 
 
-def download_format_wrap(args_tuple: tuple[tuple[str, str], str, str, float]) -> str:
+def download_format_wrap(args_tuple: tuple[tuple[str, str], str, str, float, pathlib.Path | None, int]) -> str:
     """
     download_format_wrap wraps the download_format function so its signature matches the expected signature for multiprocessing.
 
@@ -131,30 +138,53 @@ def download_format_wrap(args_tuple: tuple[tuple[str, str], str, str, float]) ->
     Returns:
         The result of download_format.
     """
-    format_tuple, url, title, ratelimit = args_tuple
-    return download_format(format_tuple, url, title, ratelimit)
+    format_tuple, url, title, ratelimit, archive_path, concurrent_fragments = args_tuple
+    return download_format(format_tuple, url, title, ratelimit, archive_path, concurrent_fragments)
 
 
-def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelimit: float) -> str:
+def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelimit: float, archive_path: pathlib.Path | None = None, concurrent_fragments: int = 42) -> str:
     specified_format, track_title = format_tuple
     out_name = f"{title}.{specified_format}.mkv"
     ydl_opts = {
-        'ignoreerrors': True,
-        'format': specified_format,
-        'outtmpl': out_name,
-        'concurrent_fragment_downloads': 42,
-        'ratelimit': ratelimit / 42,  # bytes per second
+        "ignoreerrors": False,
+        "format": specified_format,
+        "outtmpl": out_name,
+        "concurrent_fragment_downloads": concurrent_fragments,
+        "ratelimit": ratelimit / concurrent_fragments,  # bytes per second
+        "fragment_retries": float("inf"),
+        "skip_unavailable_fragments": False,
+        'postprocessors': [{
+            'actions': [(
+                yt_dlp.postprocessor.metadataparser.MetadataParserPP.replacer,
+                'id',
+                '(.+)',
+                f"\\1∕{specified_format}"
+            )],
+            'key': 'MetadataParser',
+            'when': 'pre_process'
+        }],
+        "overwrites": False,
+        "noprogress": False,
+        "progress": True,
+        "quiet": True,
+        "consoletitle": True,
+        "verbose": False,
     }
+
+    if archive_path is not None:
+        ydl_opts["download_archive"] = archive_path
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         error_code = ydl.download([url])
-        print(error_code)
+        if error_code != 0:
+            print(f"{error_code=}")
+            raise RuntimeError(f"Download failed for {url=} with {specified_format=}, {error_code=}")
 
     # return set_track_title(out_name, out_name, track_title)
     return track_title
 
 
-def download_subs(url: str, outtmpl_yt_dlp__title: str) -> None:
+def download_subs(url: str, outtmpl_yt_dlp__title: str, archive_path: pathlib.Path | None = None) -> None:
     """
     download_subs downloads subtitles for a given video URL.
 
@@ -163,20 +193,29 @@ def download_subs(url: str, outtmpl_yt_dlp__title: str) -> None:
         outtmpl_yt_dlp__title -- The title to use for the downloaded subtitle file.
     """
     ydl_opts = {
-        'ignoreerrors': True,
-        'writesubtitles': True,
-        'allsubtitles': True,
-        'skip_download': True,
-        'outtmpl': outtmpl_yt_dlp__title,
-        'concurrent_fragment_downloads': 42,
+        "ignoreerrors": True,
+        "writesubtitles": True,
+        "allsubtitles": True,
+        "skip_download": True,
+        "outtmpl": outtmpl_yt_dlp__title,
+        "concurrent_fragment_downloads": 42,
+        "overwrites": False,
+        "noprogress": False,
+        "progress": True,
+        "quiet": True,
+        "consoletitle": True,
+        "verbose": False
     }
+
+    if archive_path is not None:
+        ydl_opts["download_archive"] = archive_path
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         error_code = ydl.download([url])
         print(error_code)
 
 
-def get_download_ids(url: str) -> tuple[list[tuple[str, str]], str]:
+def get_download_ids(url: str, archive_path: pathlib.Path | None = None) -> tuple[list[tuple[str, str]], str]:
     """
     get_download_ids fetches the download ids and title for a given url.
 
@@ -186,9 +225,18 @@ def get_download_ids(url: str) -> tuple[list[tuple[str, str]], str]:
     Returns:
         structured info
     """
-    ydl_opts = {
-        'concurrent_fragment_downloads': 42,
+    ydl_opts: dict[str, int | bool | str] = {
+        "concurrent_fragment_downloads": 42,
+        "overwrites": False,
+        "noprogress": False,
+        "progress": True,
+        "quiet": True,
+        "consoletitle": True,
+        "verbose": False
     }
+
+    if archive_path is not None:
+        ydl_opts["download_archive"] = str(archive_path)
 
     downloadables = []
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -204,7 +252,7 @@ def get_download_ids(url: str) -> tuple[list[tuple[str, str]], str]:
 
         download_format_dict: dict
         for download_format_dict in download_formats:
-            language = download_format_dict.get('language', 'und')
+            language = download_format_dict.get("language", "und")
             format_note = f"[{language}] {download_format_dict.get('format_note', '')}"
             if download_format_dict["audio_ext"] == "none":
                 width = download_format_dict.get("width", 1)
@@ -226,7 +274,7 @@ def get_download_ids(url: str) -> tuple[list[tuple[str, str]], str]:
             downloadables.append(video_option)
             # break  # get *all* best resolutions if there are multiple
 
-    title = info["title"]
+    title = str(info["title"])
     extractor = info.get("extractor")
     extractor_key = info.get("extractor_key")
 
@@ -241,45 +289,70 @@ def get_download_ids(url: str) -> tuple[list[tuple[str, str]], str]:
     return downloadables, title
 
 
-def main(url: str, ratelimit: float) -> None:
-    downloadables_formats, title = get_download_ids(url)
+def main(url: str, ratelimit: float, archive_path: pathlib.Path | None = None, concurrent_fragments: int = 42) -> int:
+    downloadables_formats, title = get_download_ids(url, archive_path)
     title = title.replace("/", "⧸")
 
-    download_subs(url, title)
+    download_subs(url, title, archive_path)
 
     tasks = []
     for downloadable_format in downloadables_formats:
-        tasks.append((downloadable_format, url, title, ratelimit))
+        tasks.append((downloadable_format, url, title, ratelimit, archive_path, concurrent_fragments))
         print(downloadable_format)
 
     downloaded_names = []
-    with mp.Pool(processes=1) as mp_pool_download:
-        results = mp_pool_download.imap_unordered(download_format_wrap, tasks)
-        mp_pool_download.close()
+    try:
+        with mp.Pool(processes=1) as mp_pool_download:
+            results = mp_pool_download.imap_unordered(download_format_wrap, tasks)
+            mp_pool_download.close()  # no more tasks will be added
 
-        for filepath in tqdm.tqdm(results, total=len(tasks), dynamic_ncols=True, unit="download"):
-            downloaded_names.append(filepath)
-        mp_pool_download.join()
+            for filepath in tqdm.tqdm(results, total=len(tasks), dynamic_ncols=True, unit="download"):
+                downloaded_names.append(filepath)
+            mp_pool_download.join()  # wait for all tasks to finish
 
-    # merge(downloaded_names, f"{title}.mkv")
+        # merge(downloaded_names, f"{title}.mkv")
+    except Exception as e:
+        eprint(f"{type(e)=} occurred:\n{e}")
+        return 1
+
+    return 0
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Use yt-dlp to download movie from e.g. Arte with all languages, subtitles, then use mkvmerge them and set the audio track name')
+    parser = argparse.ArgumentParser(description="Use yt-dlp to download movie from e.g. Arte with all languages, subtitles, then use mkvmerge them and set the audio track name")
 
     parser.add_argument(
         "url",
         type=str,
-        help='url of the video',
+        help="url of the video",
         metavar="url",
     )
 
     parser.add_argument(
         "ratelimit",
         type=float,
-        help='Maximum download rate in bytes per second, e.g. 6663000',
+        help="Maximum download rate in bytes per second, e.g. 6663000",
         metavar="r",
         default="6663000",
+        nargs="?",
+    )
+
+    parser.add_argument(
+        "--download-archive",
+        type=pathlib.Path,
+        help="Download only videos not listed in the archive file. Record the IDs of all downloaded videos in it",
+        metavar="FILE",
+        default="archive.yt_dlp_archive",
+        nargs="?",
+    )
+
+    parser.add_argument(
+        "--concurrent-fragments",
+        "-N",
+        type=int,
+        help="Number of fragments of a dash/hlsnative video that should be downloaded concurrently (default is 42)",
+        metavar="N",
+        default=42,
         nargs="?",
     )
 
@@ -287,4 +360,6 @@ if __name__ == "__main__":
 
     argument_url: str = parsed_arguments.url
     argument_ratelimit: float = parsed_arguments.ratelimit
-    main(argument_url, argument_ratelimit)
+    argument_download_archive: pathlib.Path = parsed_arguments.download_archive
+    argument_concurrent_fragments: int = parsed_arguments.concurrent_fragments
+    sys.exit(main(argument_url, argument_ratelimit, argument_download_archive, argument_concurrent_fragments))
