@@ -1,0 +1,117 @@
+#!/bin/bash
+
+dir="$1"
+indent="    "
+
+# No directory has been provided, use current
+if [ -z "$dir" ]
+then
+    dir="$(pwd)"
+fi
+
+# Make sure directory ends with "/"
+if [[ $dir != */ ]]
+then
+    dir="$dir/*"
+else
+    dir="$dir*"
+fi
+
+# Loop all sub-directories
+for f in $dir
+do
+    # Only interested in directories
+    [ -d "${f}" ] || continue
+
+    echo -en "\033[0;35m"
+    echo "${f}"
+    echo -en "\033[0m"
+
+    # Check if directory is a git repository (ask git directly to support submodules/worktrees)
+    if ! git -C "$f" rev-parse --git-dir >/dev/null 2>&1; then
+        # TODO: first add all git-dirs into a set, with the path as an element in a list,
+        # then check if there are duplicates, and choose the simplest and most direct one to print here
+        # if there are mismatching paths, where there is no third element which is an exact match of the common start, that is an error
+
+        echo "${indent}Not a git repository"
+        continue
+    fi
+
+    mod=0
+    pushd "$f" >/dev/null || exit
+
+    # Check for modified files
+    if [ "$(git status | grep modified -c)" -ne 0 ]
+    then
+        mod=1
+        echo -en "\033[0;31m"
+        echo "${indent}Modified files"
+        echo -en "\033[0m"
+    fi
+
+    # Check for untracked files
+    if [ "$(git status | grep Untracked -c)" -ne 0 ]
+    then
+        mod=1
+        echo -en "\033[0;31m"
+        echo "${indent}Untracked files"
+        echo -en "\033[0m"
+    fi
+
+    # Check for unpushed changes
+    if [ "$(git status | grep 'Your branch is ahead' -c)" -ne 0 ]
+    then
+            mod=1
+            echo -en "\033[0;31m"
+            echo "${indent}Unpushed commit"
+            echo -en "\033[0m"
+    fi
+
+    # Check for configured remotes and print them (or say none)
+    if [ -z "$(git remote)" ]
+    then
+        echo -en "\033[0;33m"
+        echo "${indent}No remote configured"
+        echo -en "\033[0m"
+    else
+        echo -en "\033[1;36m"
+        echo "${indent}Remotes:"
+        git remote -v | sed "s/^/${indent}/"
+        echo -en "\033[0m"
+    fi
+
+    # Print last fetch time and how long ago it was (resolve gitdir so submodules/worktrees work)
+    gitdir=$(git rev-parse --git-dir 2>/dev/null)
+    if [ -n "$gitdir" ] && [ -f "$gitdir/FETCH_HEAD" ]
+    then
+        ts=$(stat -c %Y "$gitdir/FETCH_HEAD" 2>/dev/null) || ts=
+        if [ -n "$ts" ]
+        then
+            echo -en "\033[1;33m"
+            echo -n "${indent}Last fetch: "
+            date -d "@$ts" '+%F %T %z'
+            now=$(date +%s)
+            diff=$((now - ts))
+            days=$((diff/86400))
+            hours=$((diff%86400/3600))
+            mins=$((diff%3600/60))
+            secs=$((diff%60))
+            echo "${indent}Fetched $days days, $hours hours, $mins minutes, $secs seconds ago"
+            echo -en "\033[0m"
+        fi
+    else
+        echo -en "\033[0;33m"
+        echo "${indent}No FETCH_HEAD (never fetched)"
+        echo -en "\033[0m"
+    fi
+
+    # Check if everything is peachy keen
+    if [ $mod -eq 0 ]
+    then
+        echo "${indent}Nothing to commit"
+    fi
+
+    popd >/dev/null || exit
+    echo
+done
+
