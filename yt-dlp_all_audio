@@ -4,6 +4,7 @@ Docstring for yt-dlp_all_audio
 """
 
 import argparse
+from http import cookies
 import multiprocessing as mp
 import pathlib
 import subprocess
@@ -128,7 +129,7 @@ def set_track_title(temp_name: str, out_name: str, title: str) -> str:
     return out_name
 
 
-def download_format_wrap(args_tuple: tuple[tuple[str, str], str, str, float, pathlib.Path | None, int]) -> str:
+def download_format_wrap(args_tuple: tuple[tuple[str, str], str, str, float, pathlib.Path | None, pathlib.Path | None, int]) -> str:
     """
     download_format_wrap wraps the download_format function so its signature matches the expected signature for multiprocessing.
 
@@ -138,11 +139,11 @@ def download_format_wrap(args_tuple: tuple[tuple[str, str], str, str, float, pat
     Returns:
         The result of download_format.
     """
-    format_tuple, url, title, ratelimit, archive_path, concurrent_fragments = args_tuple
-    return download_format(format_tuple, url, title, ratelimit, archive_path, concurrent_fragments)
+    format_tuple, url, title, ratelimit, archive_path, cookies_path, concurrent_fragments = args_tuple
+    return download_format(format_tuple, url, title, ratelimit, archive_path, cookies_path, concurrent_fragments)
 
 
-def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelimit: float, archive_path: pathlib.Path | None = None, concurrent_fragments: int = 42) -> str:
+def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelimit: float, archive_path: pathlib.Path | None = None, cookies_path: pathlib.Path | None = None, concurrent_fragments: int = 42) -> str:
     specified_format, track_title = format_tuple
     out_name = f"{title}.{specified_format}.mkv"
     ydl_opts = {
@@ -172,7 +173,9 @@ def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelim
     }
 
     if archive_path is not None:
-        ydl_opts["download_archive"] = archive_path
+        ydl_opts["download_archive"] = str(archive_path)
+    if cookies_path is not None:
+        ydl_opts["cookiefile"] = str(cookies_path)
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         error_code = ydl.download([url])
@@ -184,7 +187,7 @@ def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelim
     return track_title
 
 
-def download_subs(url: str, outtmpl_yt_dlp__title: str, archive_path: pathlib.Path | None = None) -> None:
+def download_subs(url: str, outtmpl_yt_dlp__title: str, archive_path: pathlib.Path | None = None, cookies_path: pathlib.Path | None = None) -> None:
     """
     download_subs downloads subtitles for a given video URL.
 
@@ -204,13 +207,15 @@ def download_subs(url: str, outtmpl_yt_dlp__title: str, archive_path: pathlib.Pa
         "progress": True,
         "quiet": True,
         "consoletitle": True,
-        "verbose": False
+        "verbose": False,
     }
 
     if archive_path is not None:
-        ydl_opts["download_archive"] = archive_path
+        ydl_opts["download_archive"] = str(archive_path)
+    if cookies_path is not None:
+        ydl_opts["cookiefile"] = str(cookies_path)
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    with yt_dlp.YoutubeDL(params=ydl_opts) as ydl:
         error_code = ydl.download([url])
         print(error_code)
 
@@ -232,11 +237,13 @@ def get_download_ids(url: str, archive_path: pathlib.Path | None = None) -> tupl
         "progress": True,
         "quiet": True,
         "consoletitle": True,
-        "verbose": False
+        "verbose": False,
     }
 
     if archive_path is not None:
         ydl_opts["download_archive"] = str(archive_path)
+    if cookies_path is not None:
+        ydl_opts["cookiefile"] = str(cookies_path)
 
     downloadables = []
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -289,15 +296,15 @@ def get_download_ids(url: str, archive_path: pathlib.Path | None = None) -> tupl
     return downloadables, title
 
 
-def main(url: str, ratelimit: float, archive_path: pathlib.Path | None = None, concurrent_fragments: int = 42) -> int:
+def main(url: str, ratelimit: float, archive_path: pathlib.Path | None = None, concurrent_fragments: int = 42, cookies_path: pathlib.Path = pathlib.Path("cookies.txt")) -> int:
     downloadables_formats, title = get_download_ids(url, archive_path)
     title = title.replace("/", "⧸")
 
-    download_subs(url, title, archive_path)
+    download_subs(url, title, archive_path, cookies_path)
 
     tasks = []
     for downloadable_format in downloadables_formats:
-        tasks.append((downloadable_format, url, title, ratelimit, archive_path, concurrent_fragments))
+        tasks.append((downloadable_format, url, title, ratelimit, archive_path, cookies_path, concurrent_fragments))
         print(downloadable_format)
 
     downloaded_names = []
@@ -356,10 +363,20 @@ if __name__ == "__main__":
         nargs="?",
     )
 
+    parser.add_argument(
+        "--cookies",
+        type=pathlib.Path,
+        help="Path to the cookies.txt file for authentication",
+        metavar="FILE",
+        default="cookies.txt",
+        nargs="?",
+    )
+
     parsed_arguments = parser.parse_args()
 
     argument_url: str = parsed_arguments.url
     argument_ratelimit: float = parsed_arguments.ratelimit
     argument_download_archive: pathlib.Path = parsed_arguments.download_archive
     argument_concurrent_fragments: int = parsed_arguments.concurrent_fragments
-    sys.exit(main(argument_url, argument_ratelimit, argument_download_archive, argument_concurrent_fragments))
+    cookies_path: pathlib.Path = parsed_arguments.cookies
+    sys.exit(main(argument_url, argument_ratelimit, argument_download_archive, argument_concurrent_fragments, cookies_path))
