@@ -12,6 +12,7 @@ import traceback
 from collections import defaultdict
 from inspect import currentframe, getframeinfo, stack
 
+from dataclasses import dataclass
 import tqdm
 import yt_dlp
 
@@ -128,29 +129,48 @@ def set_track_title(temp_name: str, out_name: str, title: str) -> str:
     return out_name
 
 
-def download_format_wrap(args_tuple: tuple[tuple[str, str], int, str, str, float, pathlib.Path | None, pathlib.Path | None, int]) -> str:
-    """
-    download_format_wrap wraps the download_format function so its signature matches the expected signature for multiprocessing.
+def store_format_title_path(new_format: str, new_track_title: str, title: str) -> None:
+    # read store
+    store_path = pathlib.Path(f"{title}.track_titles.txt")
+    store = dict[str, str]()
+    if store_path.exists():
+        with open(store_path, "r", encoding="utf-8") as store_file:
+            for line in store_file:
+                format, track_title = line.strip().split("/")
+                store[format] = track_title
 
-    Arguments:
-        args_tuple -- A tuple containing the arguments for download_format.
+    store[new_format] = new_track_title
 
-    Returns:
-        The result of download_format.
-    """
-    format_tuple, max_format_str_length, url, title, ratelimit, archive_path, cookies_path, concurrent_fragments = args_tuple
-    return download_format(format_tuple, max_format_str_length, url, title, ratelimit, archive_path, cookies_path, concurrent_fragments)
+    # write store
+    with open(store_path, "w", encoding="utf-8") as store_file:
+        for format, track_title in store.items():
+            store_file.write(f"{format}/{track_title}\n")
 
 
-def download_format(format_tuple: tuple[str, str], max_format_str_length: int, url: str, title: str, ratelimit: float, archive_path: pathlib.Path | None = None, cookies_path: pathlib.Path | None = None, concurrent_fragments: int = 42) -> str:
-    specified_format, track_title = format_tuple
-    out_name = f"{title}.{specified_format}.mkv"
+@dataclass
+class Task:
+    download_format: str
+    max_format_str_length: int
+
+    track_title: str
+
+    url: str
+    title: str
+    ratelimit: float
+
+    concurrent_fragments: int = 2
+    archive_path: pathlib.Path | None = None
+    cookies_path: pathlib.Path | None = None
+
+
+def download_format(task: Task) -> str:
+    out_name = f"{task.title}.{task.download_format}.mkv"
     ydl_opts = {
         "ignoreerrors": False,
-        "format": specified_format,
+        "format": task.download_format,
         "outtmpl": out_name,
-        "concurrent_fragment_downloads": concurrent_fragments,
-        "ratelimit": ratelimit / concurrent_fragments,  # bytes per second
+        "concurrent_fragment_downloads": task.concurrent_fragments,
+        "ratelimit": task.ratelimit / task.concurrent_fragments,  # bytes per second
         "fragment_retries": float("inf"),
         "skip_unavailable_fragments": False,
         'postprocessors': [{
@@ -158,7 +178,7 @@ def download_format(format_tuple: tuple[str, str], max_format_str_length: int, u
                 yt_dlp.postprocessor.metadataparser.MetadataParserPP.replacer,
                 'id',
                 '(.+)',
-                f"\\1∕{specified_format}"
+                f"\\1∕{task.download_format}"
             )],
             'key': 'MetadataParser',
             'when': 'pre_process'
@@ -169,22 +189,22 @@ def download_format(format_tuple: tuple[str, str], max_format_str_length: int, u
         "quiet": True,
         "consoletitle": True,
         "verbose": False,
-        "progress_template": {"download": f"[{specified_format:{max_format_str_length}}] %(progress._percent_str)s of %(progress._total_bytes_str)s (~%(progress._total_bytes_estimate_str)s) at %(progress._speed_str)s ETA %(progress._eta_str)s (%(progress._elapsed_str)s)"},
+        "progress_template": {"download": f"[{task.download_format:{task.max_format_str_length}}] %(progress._percent_str)s of %(progress._total_bytes_str)s (~%(progress._total_bytes_estimate_str)s) at %(progress._speed_str)s ETA %(progress._eta_str)s (%(progress._elapsed_str)s)"},
     }
 
-    if archive_path is not None:
-        ydl_opts["download_archive"] = str(archive_path)
-    if cookies_path is not None:
-        ydl_opts["cookiefile"] = str(cookies_path)
+    if task.archive_path is not None:
+        ydl_opts["download_archive"] = str(task.archive_path)
+    if task.cookies_path is not None:
+        ydl_opts["cookiefile"] = str(task.cookies_path)
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        error_code = ydl.download([url])
+        error_code = ydl.download([task.url])
         if error_code != 0:
             print(f"{error_code=}")
-            raise RuntimeError(f"Download failed for {url=} with {specified_format=}, {error_code=}")
+            raise RuntimeError(f"Download failed for {task.url=} with {task.download_format=}, {error_code=}")
 
     # return set_track_title(out_name, out_name, track_title)
-    return track_title
+    return task.track_title
 
 
 def download_subs(url: str, outtmpl_yt_dlp__title: str, archive_path: pathlib.Path | None = None, cookies_path: pathlib.Path | None = None) -> None:
@@ -306,20 +326,35 @@ def main(url: str, ratelimit: float, archive_path: pathlib.Path | None = None, c
     downloadables_formats, title = get_download_ids(url, archive_path, cookies_path)
     title = title.replace("/", "⧸")
 
-    max_format_str_length = max(len(format_str) for format_str, _ in downloadables_formats)
+    for downloadable_format in downloadables_formats:
+        store_format_title_path(new_format=downloadable_format[0], new_track_title=downloadable_format[1], title=title)
 
     download_subs(url, title, archive_path, cookies_path)
 
-    tasks: list[tuple[tuple[str, str], int, str, str, float, pathlib.Path | None, pathlib.Path | None, int]] = []
+    max_format_str_length = max(len(format_str) for format_str, _ in downloadables_formats)
+
+    tasks = list[Task]()
     for downloadable_format in downloadables_formats:
-        tasks.append((downloadable_format, max_format_str_length,  url, title, ratelimit, archive_path, cookies_path, concurrent_fragments))
+        tasks.append(
+            Task(
+                download_format=downloadable_format[0],
+                track_title=downloadable_format[1],
+                max_format_str_length=max_format_str_length,
+                url=url,
+                title=title,
+                ratelimit=ratelimit,
+                archive_path=archive_path,
+                cookies_path=cookies_path,
+                concurrent_fragments=concurrent_fragments,
+            )
+        )
         dl_fmt = f"'{downloadable_format[0]}'"
         print(f"{dl_fmt:{max_format_str_length+3}} '{downloadable_format[1]}'")
 
-    downloaded_names = []
+    downloaded_names = list[str]()
     try:
         with mp.Pool(processes=1) as mp_pool_download:
-            results = mp_pool_download.imap_unordered(download_format_wrap, tasks)
+            results = mp_pool_download.imap_unordered(download_format, tasks)
             mp_pool_download.close()  # no more tasks will be added
 
             for filepath in tqdm.tqdm(results, total=len(tasks), dynamic_ncols=True, unit="file", position=1, desc="Downloading"):
