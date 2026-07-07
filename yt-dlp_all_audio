@@ -4,7 +4,6 @@ Docstring for yt-dlp_all_audio
 """
 
 import argparse
-from http import cookies
 import multiprocessing as mp
 import pathlib
 import subprocess
@@ -129,7 +128,7 @@ def set_track_title(temp_name: str, out_name: str, title: str) -> str:
     return out_name
 
 
-def download_format_wrap(args_tuple: tuple[tuple[str, str], str, str, float, pathlib.Path | None, pathlib.Path | None, int]) -> str:
+def download_format_wrap(args_tuple: tuple[tuple[str, str], int, str, str, float, pathlib.Path | None, pathlib.Path | None, int]) -> str:
     """
     download_format_wrap wraps the download_format function so its signature matches the expected signature for multiprocessing.
 
@@ -139,11 +138,11 @@ def download_format_wrap(args_tuple: tuple[tuple[str, str], str, str, float, pat
     Returns:
         The result of download_format.
     """
-    format_tuple, url, title, ratelimit, archive_path, cookies_path, concurrent_fragments = args_tuple
-    return download_format(format_tuple, url, title, ratelimit, archive_path, cookies_path, concurrent_fragments)
+    format_tuple, max_format_str_length, url, title, ratelimit, archive_path, cookies_path, concurrent_fragments = args_tuple
+    return download_format(format_tuple, max_format_str_length, url, title, ratelimit, archive_path, cookies_path, concurrent_fragments)
 
 
-def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelimit: float, archive_path: pathlib.Path | None = None, cookies_path: pathlib.Path | None = None, concurrent_fragments: int = 42) -> str:
+def download_format(format_tuple: tuple[str, str], max_format_str_length: int, url: str, title: str, ratelimit: float, archive_path: pathlib.Path | None = None, cookies_path: pathlib.Path | None = None, concurrent_fragments: int = 42) -> str:
     specified_format, track_title = format_tuple
     out_name = f"{title}.{specified_format}.mkv"
     ydl_opts = {
@@ -170,6 +169,7 @@ def download_format(format_tuple: tuple[str, str], url: str, title: str, ratelim
         "quiet": True,
         "consoletitle": True,
         "verbose": False,
+        "progress_template": {"download": f"[{specified_format:{max_format_str_length}}] %(progress._percent_str)s of %(progress._total_bytes_str)s (~%(progress._total_bytes_estimate_str)s) at %(progress._speed_str)s ETA %(progress._eta_str)s (%(progress._elapsed_str)s)"},
     }
 
     if archive_path is not None:
@@ -220,12 +220,14 @@ def download_subs(url: str, outtmpl_yt_dlp__title: str, archive_path: pathlib.Pa
         print(error_code)
 
 
-def get_download_ids(url: str, archive_path: pathlib.Path | None = None) -> tuple[list[tuple[str, str]], str]:
+def get_download_ids(url: str, archive_path: pathlib.Path | None = None, cookies_path: pathlib.Path | None = None) -> tuple[list[tuple[str, str]], str]:
     """
     get_download_ids fetches the download ids and title for a given url.
 
     Arguments:
         url -- The URL to fetch download IDs from.
+        archive_path -- The path to the download archive file.
+        cookies_path -- The path to the cookies file.
 
     Returns:
         structured info
@@ -245,19 +247,23 @@ def get_download_ids(url: str, archive_path: pathlib.Path | None = None) -> tupl
     if cookies_path is not None:
         ydl_opts["cookiefile"] = str(cookies_path)
 
-    downloadables = []
+    downloadables: list[tuple[str, str]] = []
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
 
         # info: ydl.sanitize_info makes the info json-serializable
         info = ydl.sanitize_info(info)
-        download_formats = info["formats"]
+        if info is None:
+            raise RuntimeError(f"Failed to extract info for {url=}")
+        download_formats = info.get("formats", [])
+        if download_formats is None:
+            raise RuntimeError(f"Failed to extract formats for {url=}")
         video_resolutions: dict[int, set[tuple[str, str]]] = defaultdict(set)
         audio_options: dict[str, list[tuple[str, str]]] = defaultdict(list)
 
         best_resolution = 0
 
-        download_format_dict: dict
+        # download_format_dict: dict
         for download_format_dict in download_formats:
             language = download_format_dict.get("language", "und")
             format_note = f"[{language}] {download_format_dict.get('format_note', '')}"
@@ -281,7 +287,7 @@ def get_download_ids(url: str, archive_path: pathlib.Path | None = None) -> tupl
             downloadables.append(video_option)
             # break  # get *all* best resolutions if there are multiple
 
-    title = str(info["title"])
+    title = str(info.get("title", "[Unknown Title]"))
     extractor = info.get("extractor")
     extractor_key = info.get("extractor_key")
 
@@ -297,15 +303,18 @@ def get_download_ids(url: str, archive_path: pathlib.Path | None = None) -> tupl
 
 
 def main(url: str, ratelimit: float, archive_path: pathlib.Path | None = None, concurrent_fragments: int = 42, cookies_path: pathlib.Path = pathlib.Path("cookies.txt")) -> int:
-    downloadables_formats, title = get_download_ids(url, archive_path)
+    downloadables_formats, title = get_download_ids(url, archive_path, cookies_path)
     title = title.replace("/", "⧸")
+
+    max_format_str_length = max(len(format_str) for format_str, _ in downloadables_formats)
 
     download_subs(url, title, archive_path, cookies_path)
 
-    tasks = []
+    tasks: list[tuple[tuple[str, str], int, str, str, float, pathlib.Path | None, pathlib.Path | None, int]] = []
     for downloadable_format in downloadables_formats:
-        tasks.append((downloadable_format, url, title, ratelimit, archive_path, cookies_path, concurrent_fragments))
-        print(downloadable_format)
+        tasks.append((downloadable_format, max_format_str_length,  url, title, ratelimit, archive_path, cookies_path, concurrent_fragments))
+        dl_fmt = f"'{downloadable_format[0]}'"
+        print(f"{dl_fmt:{max_format_str_length+3}} '{downloadable_format[1]}'")
 
     downloaded_names = []
     try:
@@ -313,7 +322,7 @@ def main(url: str, ratelimit: float, archive_path: pathlib.Path | None = None, c
             results = mp_pool_download.imap_unordered(download_format_wrap, tasks)
             mp_pool_download.close()  # no more tasks will be added
 
-            for filepath in tqdm.tqdm(results, total=len(tasks), dynamic_ncols=True, unit="download"):
+            for filepath in tqdm.tqdm(results, total=len(tasks), dynamic_ncols=True, unit="file", position=1, desc="Downloading"):
                 downloaded_names.append(filepath)
             mp_pool_download.join()  # wait for all tasks to finish
 
