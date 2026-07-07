@@ -286,7 +286,8 @@ def get_download_ids(url: str, archive_path: pathlib.Path | None = None, cookies
         # download_format_dict: dict
         for download_format_dict in download_formats:
             language = download_format_dict.get("language", "und")
-            format_note = f"[{language}]{' ' + download_format_dict.get('format_note', '')}"
+            format_note = download_format_dict.get('format_note', None)
+            format_note = f"[{language}]{' ' + format_note if format_note else ''}"
             if download_format_dict["audio_ext"] == "none":
                 width = download_format_dict.get("width", 1)
                 height = download_format_dict.get("height", 1)
